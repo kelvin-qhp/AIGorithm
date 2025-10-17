@@ -14,6 +14,11 @@ from test2 import num_cls
 from torch.optim import Adam
 import evaluate
 
+"""
+    reference below url to fine-ture:
+    https://cloud.tencent.com.cn/developer/article/2317754
+"""
+
 
 BATCH_SIZE = 32
 MAX_LENGTH = 128
