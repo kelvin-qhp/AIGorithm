@@ -10,7 +10,7 @@ import evaluate
 
 
 MODEL_NAME ="bert-base-chinese"
-MODEL_PATH= "../model/bertChinese/"
+MODEL_PATH= "../base-model/bertChinese/"
 hidden_size = 768
 maxlen = 8
 batch_size = 2
