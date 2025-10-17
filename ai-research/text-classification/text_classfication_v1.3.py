@@ -42,7 +42,7 @@ if __name__ == '__main__':
     tokenized_dataset = datasets.map(data_process,batched=True,remove_columns=dataset.column_names)
     # # print(tokenized_dataset)
 
-    train_args = TrainingArguments(output_dir ="../model/text_classify/checkpoint/",
+    train_args = TrainingArguments(output_dir ="../base-model/text_classify/checkpoint/",
                                    per_device_train_batch_size=32,
                                    per_device_eval_batch_size=64,
                                    logging_steps=10,

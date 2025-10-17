@@ -20,10 +20,10 @@ MAX_LENGTH = 128
 EPOCH = 3
 LOG_STEP = 100
 # MODEL_NAME = "distilbert-base-uncased-sst2en"
-MODEL_NAME = "distilbert-base-uncased"
-MODEL_SAVE = "./model/distilbert-base-uncased/save/"
+MODEL_BASE_PATH = "../base-model/distilbert-base-uncased"
+MODEL_SAVE_PATH = "./model/distilbert-base-uncased/"
 
-tokenizer = AutoTokenizer.from_pretrained("./model/"+MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_BASE_PATH)
 # model = AutoModelForSequenceClassification.from_pretrained("hfl/rbt3")
 acc_metrics = evaluate.combine(["accuracy"])
 f1_metrics = evaluate.combine(["f1"])
@@ -76,8 +76,8 @@ def eval_metric(eval_predict):
     return acc
 
 def saveModel(model):
-    torch.save(model.state_dict(),MODEL_SAVE+"state_dict.pth")
-    torch.save(model,MODEL_SAVE+"m.pt")
+    torch.save(model.state_dict(),MODEL_SAVE_PATH+"state_dict.pth")
+    torch.save(model,MODEL_SAVE_PATH+"m.pt")
 
 if __name__ == '__main__':
 
@@ -123,10 +123,10 @@ if __name__ == '__main__':
     tokenized_test_dataset = test_dataset.map(data_process,batched=True,remove_columns=train_dataset.column_names)
     print(tokenized_train_dataset)
 
-    model = AutoModelForSequenceClassification.from_pretrained("./model/"+MODEL_NAME,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
+    model = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
     print(model.config)
 
-    train_args = TrainingArguments(output_dir ="./model/"+MODEL_NAME+"/checkpoint/",
+    train_args = TrainingArguments(output_dir =MODEL_BASE_PATH+"/checkpoint/",
                                    num_train_epochs=4,
                                    per_device_train_batch_size=32,
                                    per_device_eval_batch_size=64,
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     print(train_args)
 
     # load trained model state
-    model.load_state_dict(torch.load(MODEL_SAVE+"state_dict.pth"))
+    model.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
     trainer = Trainer(model=model,
                       args=train_args,
                       train_dataset=tokenized_train_dataset,
