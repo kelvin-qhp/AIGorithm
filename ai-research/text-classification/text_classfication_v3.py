@@ -21,7 +21,8 @@ EPOCH = 3
 LOG_STEP = 100
 # MODEL_NAME = "distilbert-base-uncased-sst2en"
 MODEL_BASE_PATH = "../base-model/distilbert-base-uncased"
-MODEL_SAVE_PATH = "./model/distilbert-base-uncased/"
+MODEL_SAVE_PATH = "../model/distilbert-base-uncased/"
+DATA_OUTPUT_PATH = "../data/output/product/product.csv"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_BASE_PATH)
 # model = AutoModelForSequenceClassification.from_pretrained("hfl/rbt3")
@@ -53,6 +54,21 @@ def category_process(row):
     # row['category'] = productCategories
     # print(row)
     return row
+
+def data_precoess():
+    my_dataset = load_mydataset()
+    # print(type(my_dataset))
+    dataset_df = pd.DataFrame(my_dataset)
+
+    dataset_df.loc[dataset_df['shipping'] == '','shipping'] = 0
+    print("before clean data size:",dataset_df.shape)
+    dataset_df.dropna()
+    dataset_df = dataset_df.dropna(subset=['name'])
+    print("after clean data size:",dataset_df.shape)
+
+    dataset_df = dataset_df.apply(category_process, axis=1)
+
+    dataset_df.to_csv(DATA_OUTPUT_PATH,index=False)
 
 def drawCategory(dataset_df):
     dataset_df["category"].value_counts(ascending=True).plot.barh()
@@ -91,21 +107,15 @@ if __name__ == '__main__':
     # mm_ds = pd.read_json("./data/input/product/products.json")
     # my_dataset = load_dataset("json", data_files="./data/input/product/products.json")
     # my_dataset2 = Dataset.from_list(my_dataset)
-    my_dataset = load_mydataset()
-    # print(type(my_dataset))
-    dataset_df = pd.DataFrame(my_dataset[:1000])
 
-    dataset_df.loc[dataset_df['shipping'] == '','shipping'] = 0
-    print("before clean data size:",dataset_df.shape)
-    dataset_df.dropna()
-    dataset_df = dataset_df.dropna(subset=['name'])
-    print("after clean data size:",dataset_df.shape)
-    dataset_df.to_csv()
+    # data_precoess()
 
-    dataset_df = dataset_df.apply(category_process, axis=1)
     # drawCategory(dataset_df)
     # drawCategoryLen(dataset_df)
 
+    dataset_df = pd.read_csv(DATA_OUTPUT_PATH)
+    dataset_df = dataset_df[:1000]
+    print(f'df size:{dataset_df.shape}')
     category_names = dataset_df['category'].unique()
     id2label = {idx:name for idx,name in enumerate(category_names)}
     label2id = {label: idx for idx,label in id2label.items()}
@@ -115,13 +125,13 @@ if __name__ == '__main__':
 
     dataset = dataset.train_test_split(test_size=0.1)
     print(dataset)
-    train_dataset,test_dataset = dataset['train'],dataset['test']
+    # train_dataset,test_dataset = dataset['train'],dataset['test']
 
 
     # print(dataset.columns)
-    tokenized_train_dataset = train_dataset.map(data_process,batched=True,remove_columns=train_dataset.column_names)
-    tokenized_test_dataset = test_dataset.map(data_process,batched=True,remove_columns=train_dataset.column_names)
-    print(tokenized_train_dataset)
+    tokenized_dataset = dataset.map(data_process,batched=True,remove_columns=dataset['train'].column_names)
+    # tokenized_test_dataset = tokenized_dataset.map(data_process,batched=True,remove_columns=train_dataset.column_names)
+    print(tokenized_dataset)
 
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
     print(model.config)
@@ -147,8 +157,8 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
     trainer = Trainer(model=model,
                       args=train_args,
-                      train_dataset=tokenized_train_dataset,
-                      eval_dataset=tokenized_test_dataset,
+                      train_dataset=tokenized_dataset['train'],
+                      eval_dataset=tokenized_dataset['test'],
                       data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
                       compute_metrics=eval_metric)
 
@@ -157,7 +167,7 @@ if __name__ == '__main__':
 
     # saveModel(model)
 
-    preds_output  = trainer.predict(tokenized_test_dataset)
+    preds_output  = trainer.predict(tokenized_dataset['test'])
     print(f"*****:{preds_output.metrics}")
     y_preds = np.argmax(preds_output.predictions, axis=1)
 
