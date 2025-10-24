@@ -1,6 +1,7 @@
 import torch
+from fontTools.subset import subset
 from numpy.ma.extras import average
-from transformers import AutoModelForSequenceClassification,AutoTokenizer,DataCollatorWithPadding,TrainingArguments,Trainer,pipeline
+from transformers import AutoModelForSequenceClassification,BertForSequenceClassification,DistilBertForSequenceClassification,AutoTokenizer,DataCollatorWithPadding,TrainingArguments,Trainer,pipeline,DistilBertModel,DistilBertConfig
 from torch.utils.data import DataLoader,random_split
 import pandas as pd
 import numpy as np
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 from test2 import num_cls
 from torch.optim import Adam
 import evaluate
+import torch.nn.functional as F
 
 """
     reference below url to fine-ture:
@@ -25,9 +27,11 @@ MAX_LENGTH = 128
 EPOCH = 3
 LOG_STEP = 100
 # MODEL_NAME = "distilbert-base-uncased-sst2en"
-MODEL_BASE_PATH = "../base-model/distilbert-base-uncased"
-MODEL_SAVE_PATH = "../model/distilbert-base-uncased/"
+MODEL_BASE_PATH = "../base-model/bert-base-uncased"
+MODEL_SAVE_PATH = "../model/bert-base-uncased/"
 DATA_OUTPUT_PATH = "../data/output/product/product.csv"
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_BASE_PATH)
 # model = AutoModelForSequenceClassification.from_pretrained("hfl/rbt3")
@@ -119,11 +123,21 @@ if __name__ == '__main__':
     # drawCategoryLen(dataset_df)
 
     dataset_df = pd.read_csv(DATA_OUTPUT_PATH)
-    dataset_df = dataset_df[:1000]
+    # dataset_df = dataset_df[:1000]
     print(f'df size:{dataset_df.shape}')
     category_names = dataset_df['category'].unique()
     id2label = {idx:name for idx,name in enumerate(category_names)}
     label2id = {label: idx for idx,label in id2label.items()}
+    # df1 = dataset_df.groupby('category').agg(cnt=('category','count'))
+    # df1.reset_index()
+    df2 =dataset_df.groupby('category',as_index=False)['category'].agg({'cnt':'count'})
+    print(df2)
+    y_cate = df2[df2['cnt'] > 50]['category'].values
+    df3 = dataset_df[dataset_df['category'].isin(y_cate)]
+    print(df3.shape)
+    # df3.to_csv("../data/output/product/product2.csv",index=False)
+
+
 
     print(f"id2label size:{len(id2label)} for:{id2label}")
     dataset = Dataset.from_pandas(dataset_df)
@@ -138,10 +152,16 @@ if __name__ == '__main__':
     # tokenized_test_dataset = tokenized_dataset.map(data_process,batched=True,remove_columns=train_dataset.column_names)
     print(tokenized_dataset)
 
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
+    model = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,
+                                                               num_labels=len(id2label),
+                                                               id2label=id2label,
+                                                               label2id=label2id,
+                                                               ignore_mismatched_sizes=True,
+                                                               output_hidden_states=False)
     print(model.config)
 
     train_args = TrainingArguments(output_dir =MODEL_BASE_PATH+"/checkpoint/",
+                                   run_name="bert_model_task",
                                    num_train_epochs=4,
                                    per_device_train_batch_size=32,
                                    per_device_eval_batch_size=64,
@@ -160,6 +180,8 @@ if __name__ == '__main__':
 
     # load trained model state
     model.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
+
+
     trainer = Trainer(model=model,
                       args=train_args,
                       train_dataset=tokenized_dataset['train'],
@@ -168,18 +190,30 @@ if __name__ == '__main__':
                       compute_metrics=eval_metric)
 
 
-    # trainer.train()
+    trainer.train()
 
-    # saveModel(model)
+    saveModel(model)
 
     preds_output  = trainer.predict(tokenized_dataset['test'])
     print(f"*****:{preds_output.metrics}")
     y_preds = np.argmax(preds_output.predictions, axis=1)
 
-    # model_best = torch.load(MODEL_SAVE+"m.pt")
-    # # model_best = AutoModelForSequenceClassification.from_pretrained("./model/"+MODEL_NAME,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
-    # # model_best.load_state_dict(torch.load(MODEL_SAVE+"state_dict.pth"))
-    # cls_pipeline = pipeline("text-classification",model=model_best,tokenizer=tokenizer)
-    # res = cls_pipeline(["toy bear","apple earphone"])
-    # print("Model predict result:",res)
+    model_best = torch.load(MODEL_SAVE+"m.pt")
+    model_best = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
+    model_best.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
+    cls_pipeline = pipeline("text-classification",model=model,tokenizer=tokenizer)
+    res = cls_pipeline(["toy bear","apple earphone","Batteries (8-Pack)"])
+    print("Model predict result:",res)
 
+
+    text = "Batteries (8-Pack)"
+    inputs = tokenizer(text, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs)
+        scores = F.softmax(outputs.logits,dim=-1)
+        probs = F.softmax(scores,dim=-1)
+        probs_cls = torch.argmax(probs).item()
+        print(f'***predict result cls is:{id2label.get(probs_cls)}')
+        # print(f'*****output:{outputs}')
+        # print(f'=====last_hidden_state.size:{outputs.hidden_state.size()},**[:,0]:{outputs.hidden_state[:,0]}')
+    print(outputs)
