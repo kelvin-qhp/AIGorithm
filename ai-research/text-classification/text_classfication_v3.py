@@ -198,7 +198,7 @@ if __name__ == '__main__':
     print(f"*****:{preds_output.metrics}")
     y_preds = np.argmax(preds_output.predictions, axis=1)
 
-    model_best = torch.load(MODEL_SAVE+"m.pt")
+    # model_best = torch.load(MODEL_SAVE+"m.pt")
     model_best = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
     model_best.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
     cls_pipeline = pipeline("text-classification",model=model,tokenizer=tokenizer)
