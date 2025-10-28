@@ -27,9 +27,9 @@ MAX_LENGTH = 128
 EPOCH = 3
 LOG_STEP = 100
 # MODEL_NAME = "distilbert-base-uncased-sst2en"
-MODEL_BASE_PATH = "../base-model/bert-base-uncased"
-MODEL_SAVE_PATH = "../model/bert-base-uncased/"
-DATA_OUTPUT_PATH = "../data/output/product/product.csv"
+MODEL_BASE_PATH = "../model-base/bert-base-uncased"
+MODEL_SAVE_PATH = "../model-fine-tuning/bert-base-uncased/"
+DATA_OUTPUT_PATH = "../data/output/product/product2.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     print(train_args)
 
     # load trained model state
-    model.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
+    model.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth",map_location=device))
 
 
     trainer = Trainer(model=model,
@@ -190,18 +190,18 @@ if __name__ == '__main__':
                       compute_metrics=eval_metric)
 
 
-    trainer.train()
+    # trainer.train()
 
-    saveModel(model)
+    # saveModel(model)
 
-    preds_output  = trainer.predict(tokenized_dataset['test'])
-    print(f"*****:{preds_output.metrics}")
-    y_preds = np.argmax(preds_output.predictions, axis=1)
+    # preds_output  = trainer.predict(tokenized_dataset['test'].select(range(1000)))
+    # print(f"*****:{preds_output.metrics}")
+    # y_preds = np.argmax(preds_output.predictions, axis=1)
 
     # model_best = torch.load(MODEL_SAVE+"m.pt")
     model_best = AutoModelForSequenceClassification.from_pretrained(MODEL_BASE_PATH,num_labels=len(id2label),id2label=id2label,label2id=label2id,ignore_mismatched_sizes=True)
-    model_best.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth"))
-    cls_pipeline = pipeline("text-classification",model=model,tokenizer=tokenizer)
+    model_best.load_state_dict(torch.load(MODEL_SAVE_PATH+"state_dict.pth",map_location=device))
+    cls_pipeline = pipeline("text-classification",model=model_best,tokenizer=tokenizer)
     res = cls_pipeline(["toy bear","apple earphone","Batteries (8-Pack)"])
     print("Model predict result:",res)
 
