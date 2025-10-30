@@ -84,12 +84,12 @@ if __name__ == '__main__':
     #设置value的显示长度为100，默认为50
     pd.set_option('max_colwidth',1000)
 
-    val_df = df[1000:1010]
+    val_df = df[1000:2010]
     print(f"df size:{df.shape}")
 
     # 1. Base for pipeline
     my_pipeline = getPipeline()
-    res  =my_pipeline(list(val_df['category']))
+    res  =my_pipeline(list(val_df['name']))
     print("****Model predict result 1:",res)
 
     # 2. Base for base model
@@ -102,23 +102,22 @@ if __name__ == '__main__':
         probs = F.softmax(scores,dim=-1)
         probs_cls = torch.argmax(probs,dim=-1)
         loss = cross_entropy(outputs.logits, torch.tensor(list(val_df["labels"])), reduction="none")
-        print(f'***Model predict result 2:{[id2label.get(int(c)) for c in probs_cls]}')
-        print(f'***loss is:{loss}')
+        print(f'***Model predict result 2:{[id2label.get(int(c)) for c in probs_cls]} ,its loss:{loss.cpu().numpy()}')
         # print(f'*****output:{outputs}')
         # print(f'=====last_hidden_state.size:{outputs.hidden_state.size()},**[:,0]:{outputs.hidden_state[:,0]}')
     # print(outputs)
 
     # 3. review loss
     dataset = Dataset.from_pandas(val_df)
-    dataset = dataset.train_test_split(test_size=0.1)
+    # dataset = dataset.train_test_split(test_size=0.1)
     columns = ['sku', 'type', 'price', 'upc', 'shipping', 'description', 'manufacturer', 'model', 'url', 'image']
     tokenized_dataset = dataset.map(data_process,batched=True,remove_columns=columns)
     tokenized_dataset.set_format("torch", columns=["input_ids", "attention_mask","token_type_ids", "labels"])
-    tokenized_dataset['test'] = tokenized_dataset['test'].map(forward_pass_with_label,batched=True, batch_size=16)
+    tokenized_dataset = tokenized_dataset.map(forward_pass_with_label,batched=True, batch_size=16)
 
     # Convert dataset to pandas dataframe
     tokenized_dataset.set_format(type="pandas")
-    validate_df =  tokenized_dataset['test'].to_pandas()
+    validate_df =  tokenized_dataset.to_pandas()
     # Delete useless columns in dataframe
     validate_df.drop(['input_ids', 'attention_mask','token_type_ids'], axis=1, inplace=True)
     validate_df["predicted_label2"] = validate_df["predicted_label"].apply(label_int2str)
