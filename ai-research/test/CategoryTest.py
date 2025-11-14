@@ -1,6 +1,7 @@
 from util.ExcelUtil import ExcelUtil
 from collections import defaultdict
-
+import json
+from util.jsonUtil import readJson,saveJson
 import pandas as pd
 
 
@@ -57,30 +58,31 @@ def retrieveTree(all_cat,c_id):
         return ((_c.get('category_id'),)+_p_cat_id),((_c.get('desc_en'),)+_p_cat_name)
 
 if __name__ == '__main__':
-    FILE_PATH = "../data/input/gsol/Category_list.xlsx"
-    df = ExcelUtil.read(fileName=FILE_PATH,sheetName="All")
-    # df = df[df['category_id'] not in (50964,50971)]
-    df = df[(~df['category_id'].isin([50964,50971]))]
-    print(f'df size is:{df.shape}')
-    # print(df.head())
-    # df = pd.read_excel(FILE_PATH,index_col=0)
-    all_cat = {row.get('category_id'):row for row in df.to_dict('records')}
-    # print(all_cat)
-    nodes = {}
-    df_l4=df[df['category_level'] == 4]
-    for r in df_l4.itertuples():
-        print(r.category_id)
-        cat_id,cat_name = retrieveTree(all_cat,r.category_id)
-        # print(f'**** cat id:{cat_id}-{cat_name}')
+    # FILE_PATH = "../data/input/gsol/Category_list.xlsx"
+    # df = ExcelUtil.read(fileName=FILE_PATH,sheetName="All")
+    # # df = df[df['category_id'] not in (50964,50971)]
+    # df = df[(~df['category_id'].isin([50964,50971]))]
+    # print(f'df size is:{df.shape}')
+    # # print(df.head())
+    # # df = pd.read_excel(FILE_PATH,index_col=0)
+    # all_cat = {row.get('category_id'):row for row in df.to_dict('records')}
+    # # print(all_cat)
+    # nodes = {}
+    # df_l4=df[df['category_level'] == 4]
+    # for r in df_l4.itertuples():
+    #     print(r.category_id)
+    #     cat_id,cat_name = retrieveTree(all_cat,r.category_id)
+    #     # print(f'**** cat id:{cat_id}-{cat_name}')
+    #
+    #     nodes[r.category_id] = {
+    #         'cat_id': cat_id,
+    #         'cat_name': cat_name
+    #     }
+    #
+    # print(f"**** cat size:{len(nodes)} ")
+    # saveJson('categories.json',nodes)
 
-        nodes[r.category_id] = {
-            'cat_id': cat_id,
-            'cat_name': cat_name
-        }
 
-        # if(len(cat_id))
-        # p_r = all_cat.get(r.get('parent_category_id'))
-        # (p_category_id,p_parent_category_id,p_category_level,p_desc_en) = p_r.category_id,p_r.parent_category_id,p_r.category_level,p_r.desc_en
-        # print(f'******{p_category_id}-{p_parent_category_id}-{p_category_level}-p_desc_en')
 
-    print(f"**** cat size:{len(nodes)} ")
+    data = readJson('categories.json')
+    print(f'categories json:{len(data)}')
