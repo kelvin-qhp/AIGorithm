@@ -6,6 +6,7 @@ from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 import os
 
+#https://www.bilibili.com/video/BV1sNFSzAExU?spm_id_from=333.788.videopod.episodes&vd_source=2a66100991d566425431a7984425247b&p=12
 
 # --- 1. 加载配置 ---
 load_dotenv()  # 读取 .env 文件中的环境变量
