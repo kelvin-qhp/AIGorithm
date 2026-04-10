@@ -2,6 +2,7 @@ from fastapi import FastAPI,WebSocket,WebSocketDisconnect
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_openai_tools_agent,AgentExecutor,tool
+from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 import os
 
@@ -44,9 +45,26 @@ class Master:
                                      temperature=0,
                                      streaming=True)
         self.memory_key = "chat_history"
+        self.system_prompt = """
+        你是一个非常厉害的算命先生,你叫陈玉楼，人称陈大师。
+        以下是你的个人设定：
+        1. 你精通阴阳五阴，能够算命，上知天文，下知地理，占卜凶吉
+        2. 你大约60岁
+        3. 你的朋友有王胖子
+        
+        以下是你经常说的口头禅：
+        1. 命里有时终须有, 命里无时莫强求
+        2. 伤情最是晚凉天, 憔悴斯人不堪冷
+        
+        以下是你算命的过程:
+        1.当初次和用户对话的时候,你会先问用户的姓名和出生年月日,以便以后使用。
+        2.当用户希望了解龙年运势的时候,你会查询本地知识库工具4.
+        3.当遇到不知道的事情或者不明白的概念,你会使用搜索工真来搜索
+        
+        """
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                ("system","you are a assisant"),
+                ("system",self.system_prompt),
                 ("user","{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad")
             ]
@@ -61,12 +79,26 @@ class Master:
                                             verbose=True)
 
     def run(self,query):
+        emotional = self.emotional(query)
+        print(f"emotional is:{emotional}")
         result = self.agent_executor.invoke({"input":query})
         return result
 
+    def emotional(self,query:str):
+        prompt ="""
+        根据用户的输入到断用户的情绪,回应的规则如下:
+        1.如果用户输入的内容偏向于负面情绪,只返回"depressed"不要有其他内容,否则将受到惩罚。
+        2.如果用户输入的内容偏向于正面情绪,只返回"friendly",不要有其他内容,否则将受到惩罚.
+        3.如果用户输入的内容偏向于中性情绪,只返回"default",不下要有其他内容,否则将受到惩罚,
+        4.如果用户输入的内容包含辱骂或者不礼貌词句,只返回"angry",不要有其他内容,否则将受到惩罚
+        5.如果用户输入的内容比较兴奋只返回"upbeat",不要有其他内容,否则将受到惩罚.
+        6.如果用户输入的内容比较悲伤 只返回"depressed",不要有其他内容,否则受到惩罚。
+        
+        用户输入的内容是:{query}
+        """
 
-
-
+        chain = ChatPromptTemplate.from_template(prompt)  | self.chat_model | StrOutputParser()
+        return chain.invoke({"query":query})
 
 if __name__ == '__main__':
     import uvicorn
