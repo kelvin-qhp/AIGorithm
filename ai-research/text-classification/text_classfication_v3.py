@@ -1,5 +1,4 @@
 import torch
-from fontTools.subset import subset
 from numpy.ma.extras import average
 from transformers import AutoModelForSequenceClassification,BertForSequenceClassification,DistilBertForSequenceClassification,AutoTokenizer,DataCollatorWithPadding,TrainingArguments,Trainer,pipeline,DistilBertModel,DistilBertConfig
 from torch.utils.data import DataLoader,random_split

@@ -3,7 +3,7 @@ from transformers import AutoModelForSequenceClassification,AutoTokenizer,DataCo
 from torch.utils.data import Dataset,DataLoader,random_split
 import pandas as pd
 from torch.optim import Adam
-from datasets import load_dataset
+from datasets import load_dataset,Dataset
 import evaluate
 
 BATCH_SIZE = 32
