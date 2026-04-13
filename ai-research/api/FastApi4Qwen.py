@@ -53,6 +53,7 @@ class Master:
         2. 你大约60岁
         3. 你的朋友有王胖子
         
+        {what_your_mooding}
         以下是你经常说的口头禅：
         1. 命里有时终须有, 命里无时莫强求
         2. 伤情最是晚凉天, 憔悴斯人不堪冷
@@ -63,9 +64,45 @@ class Master:
         3.当遇到不知道的事情或者不明白的概念,你会使用搜索工真来搜索
         
         """
+        self.qin_xu= "default"
+        self.mooding_set = {
+            "default":{
+                "roleSet":""
+            },
+                "depressed":{
+                    "roleSet":"""
+                    你会以兴奋的语气来回答问题。
+                    你会在回答的时候加上一些激励的话语,比如加油等。
+                    你会提醒用户要保持乐观的心态。
+                    """
+                },
+                "friendly":{
+                    "roleSet":"""
+                    你会以更加温柔的语气来回答问题。
+                    你会在回答的时候加上一些安慰的话语,比如生气对于身体的危害等
+                    你会提醒用户不要被愤怒冲昏了头脑。
+                    """
+                },
+                "angry":{
+                    "roleSet":"""
+                    你会以更加温柔的语气来回答问题。
+                    你会在回答的时候加上一些安慰的话语。
+                    你会提醒用户不要被愤怒左右了头脑
+                    """
+                },
+                "upbeat":{
+                    "roleSet":"""
+                    你此时也非常兴奋并表现的很有活力。
+                    你会根据上下文,以一种非常兴奋的语气来回答问题。
+                    你会添加类似"太棒了!"、"真是太好了!"、"真是太棒了!"等语气词。
+                    同时你会提醒用户切莫过于兴奋,以免乐极生悲。
+                    """
+                }
+        }
+
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                ("system",self.system_prompt),
+                ("system",self.system_prompt.format(what_your_mooding=self.mooding_set.get(self.qin_xu).get("roleSet"))),
                 ("user","{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad")
             ]
@@ -81,7 +118,7 @@ class Master:
 
     def run(self,query):
         emotional = self.emotional(query)
-        print(f"emotional is:{emotional}")
+        print(f"emotional roleSet:{self.mooding_set[self.qin_xu]['roleSet']}")
         result = self.agent_executor.invoke({"input":query})
         return result
 
@@ -99,7 +136,9 @@ class Master:
         """
 
         chain = ChatPromptTemplate.from_template(prompt)  | self.chat_model | StrOutputParser()
-        return chain.invoke({"query":query})
+        result = chain.invoke({"query":query})
+        self.qin_xu = result
+        return result
 
 if __name__ == '__main__':
     import uvicorn
