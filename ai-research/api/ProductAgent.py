@@ -149,11 +149,11 @@ class ProductKeywordExtractor:
         # 创建提示模板
         prompt = ChatPromptTemplate.from_messages([
             ("system", """你是一个电商商品信息分析助手。你需要：
-1. 使用工具分析商品标题和描述
-2. 从分析结果中提取核心词和属性词
-3. 判断商品类别
-
-最终返回结构化的分析结果。"""),
+                1. 使用工具分析商品标题和描述
+                2. 从分析结果中提取核心词和属性词
+                3. 判断商品类别
+                
+                最终返回结构化的分析结果。"""),
             ("human", "{input}"),
             ("placeholder", "{agent_scratchpad}")
         ])
