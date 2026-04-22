@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_openai import ChatOpenAI
 from langchain.agents import  create_agent
@@ -155,11 +155,18 @@ class ProductKeywordExtractor:
                 
                 最终返回结构化的分析结果。"""),
             ("human", "{input}"),
-            ("placeholder", "{agent_scratchpad}")
+            # ("placeholder", "{agent_scratchpad}")
+            MessagesPlaceholder(variable_name="agent_scratchpad")
         ])
-
+        system_prompt = """你是一个电商商品信息分析助手。你需要：
+                    1. 使用工具分析商品标题和描述
+                    2. 从分析结果中提取核心词和属性词
+                    3. 判断商品类别
+                    
+                    最终返回结构化的分析结果。
+                """
         # 创建 Agent
-        agent = create_agent(model=self.llm, tools=tools,prompt= prompt)
+        agent = create_agent(model=self.llm, tools=tools,system_prompt=system_prompt)
         # agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
         # 执行 Agent
@@ -167,10 +174,10 @@ class ProductKeywordExtractor:
         if product_description:
             product_text += f"描述：{product_description}"
 
-        result = agent.invoke({
-            "input": f"请分析以下商品信息，提取核心词、属性词和类别：\n{product_text}"
-        })
-
+        # result = agent.invoke({
+        #     "input": f"请分析以下商品信息，提取核心词、属性词和类别：\n{product_text}"
+        # })
+        result = agent.invoke( HumanMessage(f"请分析以下商品信息，提取核心词、属性词和类别：\n{product_text}"))
         return result
 
     def batch_extract(self, products: List[Dict[str, str]]) -> List[ProductKeywords]:
@@ -268,4 +275,25 @@ class EnhancedProductKeywordExtractor(ProductKeywordExtractor):
 if __name__ == "__main__":
     # --- 1. 加载配置 ---
     load_dotenv()  # 读取 .env 文件中的环境变量
-    main()
+
+    # main()
+
+    extractor = ProductKeywordExtractor(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        api_base=os.getenv("OPENAI_API_BASE"),
+        model_name="qwen-plus"  # 使用通义千问 plus 版本
+    )
+
+    # 测试商品 1：手机
+    product_1 = {
+        "title": "小米14 Pro 5G智能拍照手机 徕卡光学镜头 16GB+512GB 黑色",
+        "description": """小米14 Pro搭载第三代骁龙8移动平台，配备徕卡光学Summilux镜头，
+        支持可变光圈，2K超视感屏，4880mAh大电池，支持120W有线快充和50W无线快充。
+        适合摄影爱好者和商务人士使用。"""
+    }
+
+    result0 = extractor.extract_by_agent(product_title=product_1.get("title", ""),
+                               product_description=product_1.get("description", ""))
+
+    print(f"agent output：{result0}")
+
