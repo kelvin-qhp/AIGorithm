@@ -1,5 +1,37 @@
 # ES
 
+### 0. GSOL isearch biz:
+
+~~~
+1.1 isearch PP search list cache key:
+topK: isearch.s.topK.{power}.MANUAL_ADV_SAB.DESKTOP.en.01F0DAE50E8C742405C73F464208747C
+agg: isearch.s.agg.{power}.MANUAL_ADV_SAB.DESKTOP.en.44F808F50EAB7AC6B3B942EDC70DB20A
+1.2 isearch SP search list 
+agg:isearch.s.agg.{power bank}.DESKTOP.en.7EE855A2F99F162A2E5535626533C099
+
+2. Show genie:
+SP list: isearch.agg.v1.ts.Supplier.agg.filter.[2803000000044, 2803000000046, 2803000000372]edb9f5ca46053014f012293b0f9a1720
+
+3。 HK exhibitor:
+SP list: isearch.agg.hk.show.filters.A6B045BC507EFC86F37122CBEBB0A960
+~~~
+
+~~~
+Popup:
+1. receive message from kafka:
+kubernetes.container_name.keyword:("gsol-dw-base")  and log:("[Popup-Collect] convert2Map from kafka for anonymous_id" )
+
+2. filter unused message from kafka:
+kubernetes.container_name.keyword:("gsol-dw-base")  and log:("[Popup-Collect] filterMessage" )
+
+3. sync DB:
+kubernetes.container_name.keyword:("gsol-dw-base")  and log:("[Popup-Collect] Sync2DB tableNo" )
+
+4。 resend kafka:
+kubernetes.container_name.keyword:("gsol-dw-base")  and log:("[Popup-Collect] Send2Kafka topic:" )
+
+~~~
+
 
 
 ### 1. Data too large Error
@@ -39,9 +71,29 @@ GET /_stats/fielddata?fields=*
 GET /_nodes/stats/indices/fielddata?fields=*
 GET /_nodes/stats/indices/fielddata?level=indices&fields=*
 
+
+get /_cat/thread_pool?v
 ~~~
 
 
+
+~~~
+在elasticsearch.yml 中设置boostrap.mlockall属性为true；
+
+设置Xmx和Xms属性值相同，避免JVM改变堆大小，注意内存大小合适，并非越大越好(会导致回收时长变长)；
+
+修改/etc/security/limits.conf，添加如下内容(假设运行ES的用户是appuser）
+appuser - nofile 65536
+appuser - memlock unlimited
+
+修改/etc/pam.d/common-session文件，添加如下内容
+session required pam_limits.so
+
+~~~
+
+auto_queue_frame_size ：
+
+![1773133730205](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1773133730205.png)
 
 ### 2. git commend
 
@@ -489,10 +541,18 @@ GET my-index-000001/_search
 
 ### GET /_cat/tasks?v
 
+--GET /_cat/tasks?v
+
 --GET _tasks?detailed=true
 --GET _tasks?&detailed&actions=indices:data/read/search&nodes=hPDJUkPUQNOLDRvLkMuDZQ
 --GET _tasks?actions=*&detailed=true&nodes=hPDJUkPUQNOLDRvLkMuDZQ
 --POST _tasks/Zx2pLsOIRgOd08IBVlZS4g:5982548470/_cancel
+
+--GET _tasks/E_IDzeBLSBC0Ils0aJEFsA:36967411
+
+--get _nodes/hot_threads
+
+![1770886036528](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1770886036528.png)
 
 ~~~
 action                                   task_id                           parent_task_id                    type       start_time    timestamp running_time ip           node
@@ -1257,3 +1317,680 @@ GET /_cluster/allocation/explain
 } 
 ~~~
 
+
+
+### 4. ISEARCH BIZ
+
+	#### 4.1 PP/SP search api:
+
+~~~
+DESKTOP:
+https://www.globalsources.com/api/agg-search/DESKTOP/v3/product/search
+https://www.globalsources.com/api/agg-search/DESKTOP/v3/supplier/search
+
+H5:
+https://m.globalsources.com/api/agg-search/H5/v3/product/search
+https://m.globalsources.com/api/agg-search/H5/v3/supplier/search
+
+
+APP：
+api/isearch-bff/v2/search-for-app
+~~~
+
+
+
+#### 4.2  ES tradeShows biz:
+
+~~~
+tradeShowStartDate/tradeShowEndDate：展会举行的开始/结束时间
+tsStartDate/tsEndDate：展会前4后2 month的时间
+~~~
+
+
+
+### 5. ES vector search poc:
+
+#### 5.1 ES mapping & setting & data init dense_vector
+
+~~~
+PUT passage_vectors2
+{
+    "mappings": {
+        "properties": {
+            "full_text": {
+                "type": "text"
+            },
+            "creation_time": {
+                "type": "date"
+            },
+            "paragraph": {
+                "type": "nested",
+                "properties": {
+                    "vector": {
+                        "type": "dense_vector",
+                        "dims": 2,
+                        "index_options": {
+                            "type": "hnsw"
+                        }
+                    },
+                    "text": {
+                        "type": "text",
+                        "index": false
+                    },
+                    "language": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "metadata": {
+                "type": "nested",
+                "properties": {
+                    "key": {
+                        "type": "keyword"
+                    },
+                    "value": {
+                        "type": "text"
+                    }
+                }
+            }
+        }
+    },
+     "settings": {
+    "number_of_replicas": 0
+  }
+}
+
+POST passage_vectors2/_doc/1?refresh=true
+{
+  "full_text": "first paragraph another paragraph",
+  "creation_time": "2019-05-04",
+  "paragraph": [
+    {
+      "vector": [
+        0.45,
+        45
+      ],
+      "text": "first paragraph",
+      "paragraph_id": "1",
+      "language": "EN"
+    },
+    {
+      "vector": [
+        0.8,
+        0.6
+      ],
+      "text": "another paragraph",
+      "paragraph_id": "2",
+      "language": "FR"
+    }
+  ],
+  "metadata": [
+    {
+      "key": "author",
+      "value": "Jane Doe"
+    },
+    {
+      "key": "source",
+      "value": "Internal Memo"
+    }
+  ]
+}
+
+POST passage_vectors2/_doc/2?refresh=true
+{
+  "full_text": "number one paragraph number two paragraph",
+  "creation_time": "2020-05-04",
+  "paragraph": [
+    {
+      "vector": [
+        1.2,
+        4.5
+      ],
+      "text": "number one paragraph",
+      "paragraph_id": "1",
+      "language": "EN"
+    },
+    {
+      "vector": [
+        -1,
+        42
+      ],
+      "text": "number two paragraph",
+      "paragraph_id": "2",
+      "language": "EN"
+    }
+  ],
+  "metadata": [
+    {
+      "key": "author",
+      "value": "Jane Austen"
+    },
+    {
+      "key": "source",
+      "value": "Financial"
+    }
+  ]
+}
+
+
+---Filtering in nested KNN search
+GET /passage_vectors2/_search
+{
+    "fields": ["full_text", "creation_time","paragraph.vector"],
+    "_source": false,
+    "knn": {
+        "query_vector": [
+            0.45,
+            45
+        ],
+        "field": "paragraph.vector",
+        "k": 2
+    }
+}
+---Nested query in nested KNN search
+POST passage_vectors2/_search
+{
+  "query" : {
+    "nested" : {
+      "path" : "paragraph",
+        "query" : {
+          "knn": {
+            "query_vector": [
+                0.45,
+                45
+            ],
+            "field": "paragraph.vector",
+            "num_candidates": 2
+        }
+      }
+    }
+  }
+}
+
+---Filtering on nested metadata
+POST passage_vectors2/_search
+{
+    "fields": [
+        "full_text"
+    ],
+    "_source": false,
+    "knn": {
+        "query_vector": [0.45,45],
+        "field": "paragraph.vector",
+        "k": 2,
+        "filter": [
+            {"match": {"paragraph.language": "EN"}},
+            {"range": { "creation_time": { "gte": "2019-05-01", "lte": "2019-05-05"}}}
+        ]
+    }
+}
+
+---Filtering by sibling nested fields in nested KNN search
+POST passage_vectors2/_search
+{
+    "fields": [
+        "full_text","metadata.*"
+    ],
+    "_source": false,
+    "knn": {
+        "query_vector": [0.45, 45],
+        "field": "paragraph.vector",
+        "k": 2,
+        "filter": {
+            "nested": {
+                "path": "metadata",
+                "query": {
+                    "bool": {
+                        "must": [
+                            { "match": { "metadata.key": "author" } },
+                            { "match": { "metadata.value": "Austen" } }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+---Nested kNN Search with Inner hits
+POST passage_vectors2/_search
+{
+    "fields": [
+        "creation_time",
+        "full_text"
+    ],
+    "_source": false,
+    "knn": {
+        "query_vector": [
+            0.45,
+            45
+        ],
+        "field": "paragraph.vector",
+        "k": 2,
+        "num_candidates": 2,
+        "inner_hits": {
+            "_source": false,
+            "fields": [
+                "paragraph.text"
+            ],
+            "size": 1
+        }
+    }
+}
+
+--Hybrid search with  KNN + match nested fields
+POST passage_vectors2/_search
+{
+  "size": 3,
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "nested": {
+            "path": "metadata",
+            "query": {
+              "match": {
+                "metadata.value": {
+                  "query": "Austen",
+                  "boost": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "paragraph",
+            "query": {
+              "knn": {
+                "query_vector": [
+                  0.45,
+                  45
+                ],
+                "field": "paragraph.vector",
+                "num_candidates": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+~~~
+
+#### 5.2 ES mapping & setting & data init for sparse_vector（score:dot product)
+
+~~~
+POST marketplace/_doc/1
+{
+  "title": "playstation 5 - special offer",
+  "query_boost": [
+    {"playstation": 3, "game console": 1}
+  ]
+}
+
+POST marketplace/_doc/2
+{
+  "title": "playstation controller"
+}
+
+POST marketplace/_doc/3
+{
+  "title": "High fructose snack bar with artificial flavor"
+}
+ 
+POST marketplace/_doc/4
+{
+  "title": "Snack bar with whole food ingredients",
+  "customer_types": {
+    "healthy-conscious": 3
+  }
+} 
+
+
+
+GET marketplace/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "title": "playstation"
+          }
+        }
+      ]
+    }
+  }
+
+}
+
+GET marketplace/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "title": "playstation"
+          }
+        }
+      ],
+      "should": [
+        {
+          "sparse_vector": {
+            "field": "query_boost",
+            "query_vector": {
+              "playstation": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+ 
+~~~
+
+### 5.3 Semantic search 
+
+##### 5.3.1  Semantic search with `semantic_text`
+
+~~~
+				
+PUT semantic-embeddings					
+{
+  "mappings": {
+    "properties": {
+      "content": {
+        "type": "semantic_text"
+      }
+    }
+  }
+}
+
+				
+PUT semantic-embeddings-custom
+{
+  "mappings": {
+    "properties": {
+      "content": {
+        "type": "semantic_text",
+        "inference_id": ".multilingual-e5-small-elasticsearch",
+        "index_options": {
+          "dense_vector": {
+            "type": "bbq_hnsw",
+            "m": 32,
+            "ef_construction": 200
+          }
+        }
+      }
+    }
+  }
+}
+--m:The number of neighbors each node will be connected to in the HNSW graph. Higher values improve recall but increase memory usage. Default is 16.
+--ef_construction:Number of candidates considered during graph construction. Higher values improve index quality but slow down indexing. Default is 100.
+
+POST _reindex?wait_for_completion=false
+{
+  "source": {
+    "index": "test-data",
+    "size": 10
+  },
+  "dest": {
+    "index": "semantic-embeddings"
+  }
+}
+
+				
+GET _tasks/<task_id>
+POST _tasks/<task_id>/_cancel
+
+GET semantic-embeddings/_search
+{
+  "query": {
+    "match": {
+      "content": {
+        "query": "What causes muscle soreness after running?"
+      }
+    }
+  }
+}		
+		
+~~~
+
+![1772761063751](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1772761063751.png)
+
+
+
+##### 5.3.2 Semantic search with the inference API
+
+~~~
+				
+PUT _inference/sparse_embedding/elser_embeddings				
+{
+  "service": "elasticsearch",
+  "service_settings": {
+    "num_allocations": 1,
+    "num_threads": 1,
+    "model_id": ".elser_model_2_linux-x86_64"
+  }
+}
+				
+PUT elser-embeddings					
+{
+  "mappings": {
+    "properties": {
+      "content_embedding": {
+        "type": "sparse_vector"
+      },
+      "content": {
+        "type": "text"
+      }
+    }
+  }
+}
+			
+PUT _ingest/pipeline/elser_embeddings_pipeline					
+{
+  "processors": [
+    {
+      "inference": {
+        "model_id": "elser_embeddings",
+        "input_output": {
+          "input_field": "content",
+          "output_field": "content_embedding"
+        }
+      }
+    }
+  ]
+}
+
+POST _reindex?wait_for_completion=false
+{
+  "source": {
+    "index": "test-data",
+    "size": 50
+  },
+  "dest": {
+    "index": "elser-embeddings",
+    "pipeline": "elser_embeddings_pipeline"
+  }
+}		
+
+GET elser-embeddings/_search
+{
+  "query":{
+    "sparse_vector":{
+      "field": "content_embedding",
+      "inference_id": ".elser-2-elasticsearch",
+      "query": "How to avoid muscle soreness after running?"
+    }
+  },
+  "_source": [
+    "id",
+    "content"
+  ]
+}
+		
+~~~
+
+##### 5.3.3 Semantic search with ELSER
+
+~~~
+PUT my-index
+{
+  "mappings": {
+  	"_source": {
+      "excludes": [
+        "content_embedding"
+      ]
+    },
+    "properties": {
+      "content_embedding": {
+        "type": "sparse_vector"
+      },
+      "content": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+PUT _ingest/pipeline/elser-v2-test
+{
+  "processors": [
+    {
+      "inference": {
+        "model_id": ".elser_model_2_linux-x86_64",
+        "input_output": [
+          {
+            "input_field": "content",
+            "output_field": "content_embedding"
+          }
+        ]
+      }
+    }
+  ]
+}
+
+POST _reindex?wait_for_completion=false
+{
+  "source": {
+    "index": "test-data",
+    "size": 50
+  },
+  "dest": {
+    "index": "my-index",
+    "pipeline": "elser-v2-test"
+  }
+}
+
+GET my-index/_search
+{
+   "query":{
+      "sparse_vector":{
+         "field": "content_embedding",
+         "inference_id": ".elser-2-elasticsearch",
+         "query": "How to avoid muscle soreness after running?"
+      }
+   }
+}
+~~~
+
+##### 5.3.4 Hybrid search with `semantic_text`
+
+~~~
+PUT semantic-embeddings2
+{
+  "mappings": {
+    "properties": {
+      "semantic_text": {
+        "type": "semantic_text"
+      },
+      "content": {
+        "type": "text",
+        "copy_to": "semantic_text"
+      }
+    }
+  }
+}
+
+POST _reindex?wait_for_completion=false
+{
+  "source": {
+    "index": "test-data",
+    "size": 10
+  },
+  "dest": {
+    "index": "semantic-embeddings2"
+  }
+}
+
+get /_tasks/xKPVhjIxQmaRaJgGfU4eQw:10182723
+POST /_tasks/xKPVhjIxQmaRaJgGfU4eQw:10182723/_cancel
+
+GET semantic-embeddings2/_search
+{
+  "retriever": {
+    "rrf": {
+      "retrievers": [
+        {
+          "standard": {
+            "query": {
+              "match": {
+                "content": "How to avoid muscle soreness while running?"
+              }
+            }
+          }
+        },
+        {
+          "standard": {
+            "query": {
+              "semantic": {
+                "field": "semantic_text",
+                "query": "How to avoid muscle soreness while running?"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+~~~
+
+
+
+#### 5.4 Detail <span style="color:red">tuning</span>
+
+~~~~
+flat --> int8_flat --> int4_flat --> bbq_flat --> hnsw --> int8_hnsw --> int4_hnsw --> bbq_hnsw
+
+				
+PUT my-index-000001					
+{
+    "mappings": {
+        "properties": {
+            "text_embedding": {
+                "type": "dense_vector",
+                "dims": 384,
+                "index_options": {
+                    "type": "bbq_hnsw"
+                }
+            }
+        }
+    }
+}
+
+		
+~~~~
+
+~~~
+
+~~~
+
+![1776410046086](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1776410046086.png)
