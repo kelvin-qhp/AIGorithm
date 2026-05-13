@@ -357,6 +357,17 @@ POST _analyze
   "text": "powerbank 1200ah tah powercm"
 }
 
+POST _analyze
+{
+  "tokenizer": {
+    "type": "simple_pattern_split",
+    "pattern": ","
+  },
+  "filter": [
+    "lowercase"
+  ],
+  "text": "Powerbank,1200ah"
+}
 ~~~
 
 ### Suggestion for Supplier
@@ -1034,6 +1045,37 @@ GET /_cluster/allocation/explain
   "explain": true,
   "track_total_hits": 2147483647
 } 
+~~~
+
+### <font color="red">New function_script + functions</font>
+
+~~~
+GET /spu/_search
+{
+  "size": 3, 
+  "_source": ["productName","productBaseScore"], 
+  "query": {
+    "function_score": {
+      "query": {
+        "match": {
+          "productName": "power bank"
+        }
+      },
+      "functions": [
+        {
+          "field_value_factor": {
+            "field": "productBaseScore"
+          }
+          
+        },
+          { "weight": 1.0 }
+      ],
+      "score_mode": "sum",
+      "boost_mode": "multiply"
+    }
+  },
+  "explain": true
+}
 ~~~
 
 
