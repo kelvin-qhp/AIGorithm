@@ -1047,7 +1047,7 @@ GET /_cluster/allocation/explain
 } 
 ~~~
 
-### <font color="red">New function_script + functions</font>
+### <font color="red">New function_score + functions</font>
 
 ~~~
 GET /spu/_search
@@ -1066,9 +1066,14 @@ GET /spu/_search
           "field_value_factor": {
             "field": "productBaseScore"
           }
-          
         },
-          { "weight": 1.0 }
+        {
+          "filter": {
+            "term": {"categoryId": 23683}
+          },
+          "weight": 0.25
+        },
+        { "weight": 1.0 }
       ],
       "score_mode": "sum",
       "boost_mode": "multiply"
@@ -1078,7 +1083,7 @@ GET /spu/_search
 }
 ~~~
 
-
+![1778655155781](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1778655155781.png)
 
 ### 3 DSL for Agg
 
@@ -2036,3 +2041,33 @@ PUT my-index-000001
 ~~~
 
 ![1776410046086](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1776410046086.png)
+
+
+
+
+
+# linux command:
+
+~~~
+find . -type f -name "*.tmp" -delete
+find . -type f -name "*.tmp" -exec rm {} \;
+ls -lh
+ls -lhR
+ls -lht
+
+~~~
+
+
+
+~~~
+pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+conda create -n conda_env_13 
+conda activate conda_env_13
+conda install python=3.13.13
+# 激活环境后，在当前环境安装
+conda install numpy
+# 或者，不激活环境，直接用 -n 指定环境名安装
+conda install -n myenv numpy
+~~~
+
