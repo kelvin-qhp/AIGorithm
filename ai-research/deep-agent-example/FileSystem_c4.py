@@ -20,9 +20,9 @@ store = InMemoryStore()
 composite_backend = CompositeBackend(
     default=StateBackend(),
     routes={
-        "/memories/user/": StoreBackend(store,namespace=lambda ctx: getattr(ctx, "thread_id", "default")),
-        "/memories/preference/": StoreBackend(store,namespace=lambda ctx: getattr(ctx, "thread_id", "default")),
-        "/memories/": StoreBackend(store)
+        "/memories/user/": StoreBackend(store=store),
+        "/memories/skill/": StoreBackend(store=store,namespace=lambda ctx: getattr(ctx, "thread_id", "default")),
+        "/memories/": StoreBackend(store=store)
     }
 )
 
@@ -42,7 +42,8 @@ system_prompt="""你是一个具备持久记忆的智能助手。
 agent1 = create_deep_agent(
     model=model,
     store=store,
-    backend=composite_backend
+    backend=composite_backend,
+    system_prompt=system_prompt
 )
 
 
@@ -60,10 +61,28 @@ agent1 = create_deep_agent(
 
 config1 = {"configurable": {"thread_id": '1'}}
 
+print("\n[线程 A] 写入文件...")
+result_a = agent1.invoke(
+    {
+        "messages": [{
+            "role": "user",
+            "content": """
+            请执行以下操作：
+            1. 写入临时文件 /draft.txt，内容："这是临时草稿，仅当前会话可见"
+            2. 写入持久记忆 /memories/user/preferences.txt，内容："用户偏好：简洁回答，使用中文"
+            """
+        }]
+    },
+    config=config1
+)
+print(f"[线程 A] 执行完成")
+
+
+
 # 智能体将 "preferences.txt" 写入 /memories/ 路径
-res =agent1.invoke({
-    "messages": [{"role": "user", "content": "我最爱的水果是草莓, 请把我的偏好保存在/memories/preferences.txt"}]
-}, config=config1)
+# res =agent1.invoke({
+#     "messages": [{"role": "user", "content": "我最爱的水果是草莓, 请把我的偏好保存在/memories/preferences.txt"}]
+# }, config=config1)
 # res = agent.invoke(
 #     {
 #         'messages': [HumanMessage("调用工具写入一个文件，文件名为:测试.txt, 内容为: '测试'")]
@@ -79,11 +98,28 @@ res =agent1.invoke({
 #     },
 # )
 
-print(res)
+
 config2 = {"configurable": {"thread_id": '2'}}
 
-res = agent1.invoke({
-    "messages": [{"role": "user", "content": "请从/memories/获取我最爱的水果是什么?"}]
-}, config=config2)
+# res = agent1.invoke({
+#     "messages": [{"role": "user", "content": "请从/memories/获取我最爱的水果是什么?"}]
+# }, config=config2)
 
-print(res['messages'][-1].content)
+print("\n[线程 B] 新会话，尝试读取文件...")
+result_b = agent1.invoke(
+    {
+        "messages": [{
+            "role": "user",
+            "content": """
+                请尝试读取以下两个文件，并告诉我结果：
+                1. /draft.txt
+                2. /memories/user/preferences.txt
+                """
+        }]
+    },
+    config=config2
+)
+
+print(f"\n[线程 B] 响应：")
+print(result_b["messages"][-1].content)
+
