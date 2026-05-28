@@ -1,4 +1,3 @@
-import os
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
@@ -6,7 +5,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_openai import ChatOpenAI
 from langchain.agents import  create_agent
 from langchain.tools import tool
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 

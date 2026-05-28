@@ -1,8 +1,8 @@
 from fastapi import FastAPI,WebSocket,WebSocketDisconnect
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents import create_openai_tools_agent,AgentExecutor,tool
-from langchain.schema import StrOutputParser
+from langchain.agents import create_agent
+from langchain_core.tools import tool
 from dotenv import load_dotenv
 import os
 
@@ -109,12 +109,12 @@ class Master:
         )
         self.memory = ""
         tools = [test]
-        agent = create_openai_tools_agent(self.chat_model,
+        agent = create_agent(self.chat_model,
                                           tools=tools,
                                           prompt=self.prompt,)
-        self.agent_executor = AgentExecutor(agent=agent,
-                                            tools=tools,
-                                            verbose=True)
+        # self.agent_executor = AgentExecutor(agent=agent,
+        #                                     tools=tools,
+        #                                     verbose=True)
 
     def run(self,query):
         emotional = self.emotional(query)
@@ -135,7 +135,7 @@ class Master:
         用户输入的内容是:{query}
         """
 
-        chain = ChatPromptTemplate.from_template(prompt)  | self.chat_model | StrOutputParser()
+        chain = ChatPromptTemplate.from_template(prompt)  | self.chat_model
         result = chain.invoke({"query":query})
         self.qin_xu = result
         return result
