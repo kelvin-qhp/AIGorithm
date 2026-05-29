@@ -1,6 +1,6 @@
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware
-from langchain_deepseek import ChatDeepSeek
+from llm import llm
 from dotenv import load_dotenv
 from langchain.messages import HumanMessage,AIMessage,ToolMessage
 import os
@@ -41,9 +41,7 @@ def calculate(expression: str) -> str:
     result = str(eval(expression))
     return result
 
-model = ChatDeepSeek(
-    model="deepseek-chat",
-)
+model = llm
 
 agent = create_agent(
     model=model,

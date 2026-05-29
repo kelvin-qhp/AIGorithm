@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 from langchain.agents.middleware import LLMToolSelectorMiddleware
 from llm import llm,llm3
 
@@ -49,18 +50,20 @@ def calculate(expression: str) -> str:
 agent = create_agent(
     model=model,
     tools=[tool_1, tool_2, tool_3, tool_4,calculate],
-    middleware=[
-        LLMToolSelectorMiddleware(
-            model=llm3,
-            max_tools=2,
-            always_include=['tool_1'],
-        ),
-    ],
+    # middleware=[
+    #     LLMToolSelectorMiddleware(
+    #         model=llm3,
+    #         max_tools=2,
+    #         always_include=['tool_1'],
+    #     ),
+    # ],
 )
 
 status = {
     'messages': '请计算2+3*4的值'
+    # "messages": [{"role": "user", "content": "请计算2+3*4的值"}]
 }
+
 
 result = agent.invoke(status)
 print(result)

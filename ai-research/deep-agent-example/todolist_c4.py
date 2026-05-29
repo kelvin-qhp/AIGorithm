@@ -1,13 +1,11 @@
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.agents.middleware import TodoListMiddleware
-from langchain_deepseek import ChatDeepSeek
+from llm import llm
 
 load_dotenv()
 
-model = ChatDeepSeek(
-    model="deepseek-chat",
-)
+model = llm
 
 agent = create_agent(
     model=model,
