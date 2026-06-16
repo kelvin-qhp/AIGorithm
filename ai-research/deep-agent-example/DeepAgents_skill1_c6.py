@@ -115,9 +115,9 @@ while True:
     try:
         # 尝试提取 JSON
         # json_match = __import__('re').search(r'\{.*\}', content, re.DOTALL)
-        json_match = re.findall(r'```json\s*\n(.*?)\n```', content, re.DOTALL)
         # if json_match:
         #     data = json.loads(json_match.group())
+        json_match = re.findall(r'```json\s*\n(.*?)\n```', content, re.DOTALL)
         for m in json_match:
             data = json.loads(m)
             product_output_result = ProductOutput(**data)
