@@ -114,9 +114,12 @@ while True:
     content = last_message.content if hasattr(last_message, "content") else str(last_message)
     try:
         # 尝试提取 JSON
-        json_match = __import__('re').search(r'\{.*\}', content, re.DOTALL)
-        if json_match:
-            data = json.loads(json_match.group())
+        # json_match = __import__('re').search(r'\{.*\}', content, re.DOTALL)
+        json_match = re.findall(r'```json\s*\n(.*?)\n```', content, re.DOTALL)
+        # if json_match:
+        #     data = json.loads(json_match.group())
+        for m in json_match:
+            data = json.loads(m)
             product_output_result = ProductOutput(**data)
             print('*'*50 + f'\n{product_output_result}')
     except Exception as e:
