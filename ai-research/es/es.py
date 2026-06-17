@@ -112,10 +112,46 @@ def batch_insert( documents, indices_name="pp_vector",batch_size=100):
 
     print(f"📊 总共写入: {len(documents)} 条文档")
 
+
+def knn_search(indices_name, query_text, k=5, num_candidates=100):
+    """
+    基础 kNN 搜索
+
+    Args:
+        indices_name: 索引名称
+        query_text: 查询文本
+        k: 返回结果数量
+        num_candidates: 候选数量（越大越准确，但越慢）
+    """
+    # 生成查询向量
+
+    query_vector = sentence_transformers_embedding(query_text).tolist()
+    # kNN 查询
+    response = es.search(
+        index=indices_name,
+        body={
+            "size": k,
+            "knn": {
+                "field": "product_vector",  # 向量字段名
+                "query_vector": query_vector,
+                "k": k,
+                "num_candidates": num_candidates
+            }
+        }
+    )
+
+    return response['hits']['hits']
+
 if __name__ == '__main__':
     es = es_client()
     # create_indices()
     # insert("pp_vector", "123", "python")
-    documents = [{"product_id": "1201307509", "product_name": "Promotional Mother's Day Balloons Heart Shape Custom Color Decorative Foil Balloons"},
-                 {"product_id": "1164142860", "product_name": "HDMI Matrix 4x4, with UTP Extender 60m"}]
-    batch_insert(documents)
+    # documents = [{"product_id": "1201307509", "product_name": "Promotional Mother's Day Balloons Heart Shape Custom Color Decorative Foil Balloons"},
+    #              {"product_id": "1164142860", "product_name": "HDMI Matrix 4x4, with UTP Extender 60m"}]
+    # batch_insert(documents)
+
+    results = knn_search("pp_vector", "python",2)
+    for hit in results:
+        # print(hit['_source']['product_name'])
+        print(f"得分: {hit['_score']:.4f} 文本: {hit['_source']['product_name']}")
+        print("-" * 50)
