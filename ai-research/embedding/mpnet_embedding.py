@@ -3,14 +3,16 @@ import torch
 import torch.nn.functional as F
 from sentence_transformers import SentenceTransformer,util
 
+
+
+MODEL_BASE_PATH = "../model-base/all-mpnet-base-v2"
+model = SentenceTransformer(MODEL_BASE_PATH)
+
 #Mean Pooling - Take attention mask into account for correct averaging
 def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0] #First element of model_output contains all token embeddings
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
-
-MODEL_BASE_PATH = "../model-base/all-mpnet-base-v2"
 
 
 def transformer_embedding(sentences):
@@ -25,27 +27,32 @@ def transformer_embedding(sentences):
     with torch.no_grad():
         model_output = model(**encoded_input)
 
-    token_embeddings = model_output.last_hidden_state
-    attention_mask = encoded_input['attention_mask']
+    # token_embeddings = model_output.last_hidden_state
+    # attention_mask = encoded_input['attention_mask']
+    #
+    # mask = attention_mask.unsqueeze(-1).float()
+    # sum_embeddings = (token_embeddings * mask).sum(dim=1)
+    # sum_mask = mask.sum(dim=1)
+    # embeddings = sum_embeddings / sum_mask
 
-    mask = attention_mask.unsqueeze(-1).float()
-    sum_embeddings = (token_embeddings * mask).sum(dim=1)
-    sum_mask = mask.sum(dim=1)
-    embeddings = sum_embeddings / sum_mask
+    # Perform pooling
+    embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
 
     # Normalize embeddings
     sentence_embeddings = F.normalize(embeddings, p=2, dim=1)
 
     print(f"transformer embeddings-{sentence_embeddings.shape}:{sentence_embeddings.numpy()}")
 
+    return sentence_embeddings.numpy()
+
 def sentence_transformers_embedding(sentences):
 
     embeddings = model.encode(sentences,convert_to_tensor=True, convert_to_numpy=True,normalize_embeddings=True)
     print(f"sentence_transformers embeddings-{embeddings.shape}:{embeddings.numpy()}")
-    return embeddings
+    return embeddings.numpy()
 
 if __name__ == '__main__':
-    model = SentenceTransformer(MODEL_BASE_PATH)
+
     # Sentences we want sentence embeddings for
     sentences = ["I love Python programming",
     "Python is my favorite language",
@@ -57,7 +64,7 @@ if __name__ == '__main__':
     "Cats are cute animals"]
     # transformer_embedding(sentences)
     # print("*"*50)
-    corpus_embeddings = sentence_transformers_embedding(sentences)
+    # corpus_embeddings = sentence_transformers_embedding(sentences)
 
     query_sentence = "I like Python"
     query_sentence_embeddings = transformer_embedding(sentences)
