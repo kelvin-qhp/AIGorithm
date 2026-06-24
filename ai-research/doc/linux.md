@@ -41,3 +41,5 @@ find .  -type f -name 'cer*'
 |:%s/old/new/	|替换当前行第一个|
 |:%s/old/new/gc	|全局替换，逐个确认|
 |:%s/old/new/gi	|全局替换，忽略大小写|
+
+

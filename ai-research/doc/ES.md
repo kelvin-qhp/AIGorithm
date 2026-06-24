@@ -142,6 +142,17 @@ git push -u origin --all
 git push -u origin --tags
 ~~~
 
+2.5 git create/delete branch
+~~~
+ // create branch & commit
+ git checkout -b feature/kelvin/s139/master
+ git push -u origin feature/kelvin/s139/master
+ 
+ // delete local/remote branch & commit
+ git -D feature/kelvin/s139/master
+ git push origin --delete  feature/kelvin/s139/master
+ 
+~~~
 
 
 ### 3. doccano install 
