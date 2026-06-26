@@ -154,6 +154,11 @@ git push -u origin --tags
  
 ~~~
 
+2.6 git merge
+~~~
+ git merge --no-ff feature/kelvin/s139/master
+~~~
+
 
 ### 3. doccano install 
 
