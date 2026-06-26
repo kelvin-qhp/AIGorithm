@@ -17,7 +17,7 @@ class PageResult:
     """分页结果封装类"""
     data: List[Dict[str, Any]]  # 当前页数据
     total: int  # 总记录数
-    page: int  # 当前页码
+    page_no: int  # 当前页码
     page_size: int  # 每页大小
     total_pages: int  # 总页数
     columns:List # DB columns
@@ -28,11 +28,11 @@ class PageResult:
             'data': self.data,
             'pagination': {
                 'total': self.total,
-                'page': self.page,
+                'page': self.page_no,
                 'page_size': self.page_size,
                 'total_pages': self.total_pages,
-                'has_next': self.page < self.total_pages,
-                'has_prev': self.page > 1
+                'has_next': self.page_no < self.total_pages,
+                'has_prev': self.page_no > 1
             }
         }
 
@@ -117,6 +117,21 @@ class PostgreSQLUtil:
             logger.error(f"查询执行失败: {e}")
             raise
 
+    def execute_query_count(self, sql_query: str, params: Optional[Tuple] = None) -> int:
+        wrap_sql = f"SELECT COUNT(1) FROM ( {sql_query} )"
+        try:
+            if params:
+                self.cursor.execute(wrap_sql, params)
+            else:
+                self.cursor.execute(wrap_sql)
+
+            result = self.cursor.fetchone()
+            # 将RealDictRow转换为普通字典列表
+            return result['count'] if isinstance(result, dict) else result[0]
+        except Exception as e:
+            logger.error(f"查询执行失败: {e}")
+            raise
+
     def execute_query_with_columns(self, sql_query: str, params: Optional[Tuple] = None) -> Dict[str, Any]:
         """
         执行查询SQL并返回结果
@@ -169,8 +184,9 @@ class PostgreSQLUtil:
     
     def query_paginated(self, 
                         sql_query: str, 
-                        page: int = 1, 
+                        page_no: int = 1,
                         page_size: int = 10,
+                        total:int =None,
                         params: Optional[Tuple] = None,
                         order_by: Optional[str] = None) -> PageResult:
         """
@@ -178,7 +194,7 @@ class PostgreSQLUtil:
         
         Args:
             sql_query: 原始SQL查询语句（不含ORDER BY和LIMIT）
-            page: 页码，从1开始
+            page_no: 页码，从1开始
             page_size: 每页记录数
             params: SQL参数（元组形式）
             order_by: 排序子句，例如 "id DESC" 或 "created_at ASC"
@@ -187,22 +203,19 @@ class PostgreSQLUtil:
             PageResult对象，包含分页数据和分页信息
         """
         # 参数验证
-        if page < 1:
-            page = 1
+        if page_no < 1:
+            page_no = 1
         if page_size < 1:
             page_size = 10
         
-        # 构建计数查询
-        count_sql = f"SELECT COUNT(*) AS total FROM ({sql_query}) AS subquery"
+
         
         try:
-            # 1. 获取总记录数
-            self.cursor.execute(count_sql, params)
-            total_result = self.cursor.fetchone()
-            total = total_result['total'] if total_result else 0
+            if total is None:
+                total = self.execute_query_count(sql_query,params)
             
             # 2. 构建分页查询
-            offset = (page - 1) * page_size
+            offset = (page_no - 1) * page_size
             
             # 构建完整的查询SQL
             paginated_sql = sql_query
@@ -231,7 +244,7 @@ class PostgreSQLUtil:
             return PageResult(
                 data=data,
                 total=total,
-                page=page,
+                page_no=page_no,
                 page_size=page_size,
                 total_pages=total_pages,
                 columns=self.cursor.column_mapping
@@ -320,18 +333,20 @@ def example_usage():
         print("=== 普通查询示例 ===")
         base_sql = "SELECT product_id ,product_name ,category_id ,org_id  FROM product_grp.online_product op where target_website_status ='Online' and website_type ='GSOL'"
         sql =  base_sql + "and product_id= %s"
-        results = db.execute_query_with_columns(sql, (1201198991,))
-        # for row in results:
-        #     print(row)
+        # results = db.execute_query_with_columns(sql, (1201198991,))
+        # # for row in results:
+        # #     print(row)
+        #
+        # for k,v in results.items():
+        #     print(k,v)
 
-        for k,v in results.items():
-            print(k,v)
+        count = db.execute_query_count(base_sql + " and org_id = %s", (2008852566804,))
 
         # 示例2：分页查询
         print("\n=== 分页查询示例 ===")
         paginated_result = db.query_paginated(
             sql_query=base_sql + " and org_id = %s",
-            page=2,
+            page_no=2,
             page_size=10,
             params=(2008852566804,),
             order_by="product_id DESC"
@@ -340,6 +355,8 @@ def example_usage():
         print(f"总页数: {paginated_result.total_pages}")
         print(f"当前页数据: {paginated_result.data}")
         print(f"分页信息字典: {paginated_result.to_dict()}")
+        df = pd.DataFrame(paginated_result.data,columns=paginated_result.columns)
+        print(df.shape)
         
         # 示例3：使用完整SQL的分页
         # print("\n=== 完整SQL分页示例 ===")
