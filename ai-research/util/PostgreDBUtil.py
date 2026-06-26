@@ -20,6 +20,7 @@ class PageResult:
     page: int  # 当前页码
     page_size: int  # 每页大小
     total_pages: int  # 总页数
+    columns:List # DB columns
     
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -115,7 +116,31 @@ class PostgreSQLUtil:
         except Exception as e:
             logger.error(f"查询执行失败: {e}")
             raise
-    
+
+    def execute_query_with_columns(self, sql_query: str, params: Optional[Tuple] = None) -> Dict[str, Any]:
+        """
+        执行查询SQL并返回结果
+
+        Args:
+            sql_query: SQL查询语句
+            params: SQL参数（元组形式）
+
+        Returns:
+            查询结果列表，每行数据为字典格式
+        """
+        try:
+            if params:
+                self.cursor.execute(sql_query, params)
+            else:
+                self.cursor.execute(sql_query)
+
+            results = self.cursor.fetchall()
+            # 将RealDictRow转换为普通字典列表
+            return {'data':[dict(row) for row in results],"columns":self.cursor.column_mapping}
+        except Exception as e:
+            logger.error(f"查询执行失败: {e}")
+            raise
+
     def execute_update(self, sql_query: str, params: Optional[Tuple] = None) -> int:
         """
         执行更新SQL（INSERT, UPDATE, DELETE）
@@ -208,7 +233,8 @@ class PostgreSQLUtil:
                 total=total,
                 page=page,
                 page_size=page_size,
-                total_pages=total_pages
+                total_pages=total_pages,
+                columns=self.cursor.column_mapping
             )
             
         except Exception as e:
@@ -294,10 +320,13 @@ def example_usage():
         print("=== 普通查询示例 ===")
         base_sql = "SELECT product_id ,product_name ,category_id ,org_id  FROM product_grp.online_product op where target_website_status ='Online' and website_type ='GSOL'"
         sql =  base_sql + "and product_id= %s"
-        results = db.execute_query(sql, (1201198991,))
-        for row in results:
-            print(row)
-        
+        results = db.execute_query_with_columns(sql, (1201198991,))
+        # for row in results:
+        #     print(row)
+
+        for k,v in results.items():
+            print(k,v)
+
         # 示例2：分页查询
         print("\n=== 分页查询示例 ===")
         paginated_result = db.query_paginated(
