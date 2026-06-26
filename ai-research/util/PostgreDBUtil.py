@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 import logging
 import os
+import pandas as pd
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class PageResult:
 class PostgreSQLUtil:
     """PostgreSQL数据库工具类"""
     
-    def __init__(self, host: str, port: int, database: str, user: str, password: str):
+    def __init__(self):
         """
         初始化数据库连接配置
         
@@ -50,12 +51,14 @@ class PostgreSQLUtil:
             password: 密码
         """
         self.connection_params = {
-            'host': host,
-            'port': port,
-            'database': database,
-            'user': user,
-            'password': password
+            'host': os.getenv("PG_DB_URL"),
+            'port': os.getenv("PG_DB_PORT"),
+            'database': os.getenv("PG_DB_NAME"),
+            'user': os.getenv("PG_DB_USER"),
+            'password': os.getenv("PG_DB_PASSWORD")
         }
+
+
         self.connection = None
         self.cursor = None
     
@@ -277,16 +280,16 @@ class PostgreSQLUtil:
 def example_usage():
     """使用示例"""
     # 配置数据库连接
-    db_config = {
-        'host': os.getenv("PG_DB_URL"),
-        'port': os.getenv("PG_DB_PORT"),
-        'database': os.getenv("PG_DB_NAME"),
-        'user': os.getenv("PG_DB_USER"),
-        'password': os.getenv("PG_DB_PASSWORD")
-    }
-    
+    # db_config = {
+    #     'host': os.getenv("PG_DB_URL"),
+    #     'port': os.getenv("PG_DB_PORT"),
+    #     'database': os.getenv("PG_DB_NAME"),
+    #     'user': os.getenv("PG_DB_USER"),
+    #     'password': os.getenv("PG_DB_PASSWORD")
+    # }
+    #
     # 方式1：使用上下文管理器
-    with PostgreSQLUtil(**db_config) as db:
+    with PostgreSQLUtil() as db:
         # 示例1：普通查询
         print("=== 普通查询示例 ===")
         base_sql = "SELECT product_id ,product_name ,category_id ,org_id  FROM product_grp.online_product op where target_website_status ='Online' and website_type ='GSOL'"
