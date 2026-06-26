@@ -182,11 +182,11 @@ class PostgreSQLUtil:
             logger.error(f"更新执行失败: {e}")
             raise
     
-    def query_paginated(self, 
-                        sql_query: str, 
+    def query_paginated(self,
+                        sql_query: str,
                         page_no: int = 1,
                         page_size: int = 10,
-                        total:int =None,
+                        total_count:int =None,
                         params: Optional[Tuple] = None,
                         order_by: Optional[str] = None) -> PageResult:
         """
@@ -211,8 +211,8 @@ class PostgreSQLUtil:
 
         
         try:
-            if total is None:
-                total = self.execute_query_count(sql_query,params)
+            if total_count is None:
+                total_count = self.execute_query_count(sql_query, params)
             
             # 2. 构建分页查询
             offset = (page_no - 1) * page_size
@@ -239,11 +239,11 @@ class PostgreSQLUtil:
             data = [dict(row) for row in results]
             
             # 4. 计算总页数
-            total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+            total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 0
             
             return PageResult(
                 data=data,
-                total=total,
+                total=total_count,
                 page_no=page_no,
                 page_size=page_size,
                 total_pages=total_pages,
