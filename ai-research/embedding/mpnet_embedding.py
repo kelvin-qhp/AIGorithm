@@ -48,7 +48,7 @@ def transformer_embedding(sentences):
 def sentence_transformers_embedding(sentences):
 
     embeddings = model.encode(sentences,convert_to_tensor=True, convert_to_numpy=True,normalize_embeddings=True)
-    print(f"sentence_transformers embeddings-{embeddings.shape}:{embeddings.numpy()}")
+    print(f"sentence_transformers embeddings shape:{embeddings.shape}")
     return embeddings.numpy()
 
 if __name__ == '__main__':
