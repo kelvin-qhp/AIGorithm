@@ -14,6 +14,7 @@ def es_client():
 
     return es
 
+es = es_client()
 
 # 创建索引（带向量字段）
 def create_indices(indices_name="pp_vector"):
@@ -162,7 +163,7 @@ def knn_search(indices_name, query_text, k=5, num_candidates=100):
     return response['hits']['hits']
 
 if __name__ == '__main__':
-    es = es_client()
+    # es = es_client()
     # create_indices()
     # insert("pp_vector", "123", "python")
     # documents = [{"product_id": "1201307509", "product_name": "Promotional Mother's Day Balloons Heart Shape Custom Color Decorative Foil Balloons"},

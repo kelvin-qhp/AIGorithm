@@ -82,8 +82,8 @@ if __name__ == '__main__':
     batch_size = 1000
     for i, batch in enumerate(batch_generator(df, batch_size)):
         print(f"批次 {i + 1}: shape {batch.shape}")
-
-        batch['product_vector'] = sentence_transformers_embedding(batch['product_name'].to_list())
+        embeddings = sentence_transformers_embedding(batch['product_name'].to_list())
+        batch['product_vector'] = [vec.tolist() for vec in embeddings]
         batch = batch[['product_id','product_name','product_vector']]
         batch_insert2(batch)
         break
