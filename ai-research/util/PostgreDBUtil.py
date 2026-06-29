@@ -151,7 +151,7 @@ class PostgreSQLUtil:
 
             results = self.cursor.fetchall()
             # 将RealDictRow转换为普通字典列表
-            return {'data':[dict(row) for row in results],"columns":self.cursor.column_mapping}
+            return ([dict(row) for row in results],self.cursor.column_mapping)
         except Exception as e:
             logger.error(f"查询执行失败: {e}")
             raise
