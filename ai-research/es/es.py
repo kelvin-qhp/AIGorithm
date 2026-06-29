@@ -112,6 +112,25 @@ def batch_insert( documents, indices_name="pp_vector",batch_size=100):
 
     print(f"📊 总共写入: {len(documents)} 条文档")
 
+def batch_insert2(df, indices_name="pp_vector"):
+    """
+    批量写入向量文档
+
+    Args:
+        indices_name: 索引名称
+        documents: 文档列表，每个文档包含 id, text, metadata
+        batch_size: 批次大小
+    """
+
+    df['_index'] = indices_name
+    df['_id'] = df['product_id']
+
+    # 批量写入
+    success, failed = helpers.bulk(es, df.to_dict("records"), stats_only=True)
+    print(f"✅ 批量写入: {success} 成功, {failed} 失败")
+
+
+    print(f"📊 总共写入: {len(df)} 条文档")
 
 def knn_search(indices_name, query_text, k=5, num_candidates=100):
     """

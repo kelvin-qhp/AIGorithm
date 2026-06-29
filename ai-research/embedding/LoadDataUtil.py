@@ -1,8 +1,10 @@
 from util.PostgreDBUtil import PostgreSQLUtil
 import pandas as pd
 from util.ExcelExporter import ExcelExporter
-
-
+from es.es import batch_insert2
+from embedding.mpnet_embedding import sentence_transformers_embedding
+PP_FULL_PATH="../data/export/products.xlsx"
+CAT_FULL_PATH="../data/export/category.xlsx"
 def exportProduct():
     base_sql = "SELECT product_id ,product_name ,category_id ,org_id  FROM product_grp.online_product op where target_website_status ='Online' and website_type ='GSOL'"
     sql_cat = "select category_id  from product_grp.product_category pc where delete_flag =false  and category_level =4 order by create_date asc"
@@ -20,7 +22,7 @@ def exportProduct():
             # if idx == 10:
             #     break
         print(f"Total PP count:{len(all_data)}")
-        ExcelExporter().export_list(data=all_data,filename="../data/export/products.xlsx",sheet_name="PP")
+        ExcelExporter().export_list(data=all_data,filename=PP_FULL_PATH,sheet_name="PP")
         print(f"success to export product size:{len(all_data)}")
 
 
@@ -45,12 +47,43 @@ def exportCategory():
     with PostgreSQLUtil() as db:
         data, cols = db.execute_query_with_columns(sql_query=sql_cat_full_path)
 
-    ExcelExporter().export_list(data=data, filename="../data/export/category.xlsx", sheet_name="Category")
+    ExcelExporter().export_list(data=data, filename=CAT_FULL_PATH, sheet_name="Category")
     print(f"success to export full path cat columns:{cols} for data size:{len(data)}")
+
+def getProductData():
+    df_cat = pd.read_excel(CAT_FULL_PATH)
+    df_cat = df_cat[df_cat['l4_category_id'].notna()]
+
+    df_product = pd.read_excel(PP_FULL_PATH)
+    df_product = df_product[df_product['category_id'].notna()]
+    print(f"product size:{df_product.shape}")
+
+    df_merge = pd.merge(df_product, df_cat, left_on="category_id",right_on='l4_category_id')
+    print(f"merge product size:{df_product.shape}")
+
+    return df_merge
+
+def batch_generator(df, batch_size):
+    """
+    使用生成器逐批返回数据（内存友好）
+    """
+    for i in range(0, len(df), batch_size):
+        yield df.iloc[i:i+batch_size]
 
 if __name__ == '__main__':
     # exportProduct()
 
-    exportCategory()
+    # exportCategory()
 
+    df = getProductData()
+    df = df[:3]
+    # df = pd.read_excel(CAT_FULL_PATH)
+    print(df.shape)
+    batch_size = 1000
+    for i, batch in enumerate(batch_generator(df, batch_size)):
+        print(f"批次 {i + 1}: shape {batch.shape}")
 
+        batch['product_vector'] = sentence_transformers_embedding(batch['product_name'].to_list())
+        batch = batch[['product_id','product_name','product_vector']]
+        batch_insert2(batch)
+        break
