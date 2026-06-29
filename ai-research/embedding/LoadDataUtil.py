@@ -76,14 +76,13 @@ if __name__ == '__main__':
     # exportCategory()
 
     df = getProductData()
-    df = df[:3]
+    # df = df[:3]
     # df = pd.read_excel(CAT_FULL_PATH)
     print(df.shape)
-    batch_size = 1000
+    batch_size = 500
     for i, batch in enumerate(batch_generator(df, batch_size)):
         print(f"批次 {i + 1}: shape {batch.shape}")
         embeddings = sentence_transformers_embedding(batch['product_name'].to_list())
         batch['product_vector'] = [vec.tolist() for vec in embeddings]
-        batch = batch[['product_id','product_name','product_vector']]
+        batch = batch[['product_id','product_name','product_vector','org_id','l4_category_id','l4_category_name']]
         batch_insert2(batch)
-        break

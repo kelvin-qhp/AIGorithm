@@ -30,7 +30,10 @@ def create_indices(indices_name="pp_vector"):
                     "dims": 768,  # 向量维度
                     "index": True,
                     "similarity": "cosine"  # 相似度计算方式
-                }
+                },
+                "org_id":{"type": "long"},
+                "l4_category_id":{"type": "integer"},
+                "l4_category_name":{"type": "text"}
             }
         },
         "settings": {
@@ -164,14 +167,14 @@ def knn_search(indices_name, query_text, k=5, num_candidates=100):
 
 if __name__ == '__main__':
     # es = es_client()
-    # create_indices()
+    create_indices()
     # insert("pp_vector", "123", "python")
     # documents = [{"product_id": "1201307509", "product_name": "Promotional Mother's Day Balloons Heart Shape Custom Color Decorative Foil Balloons"},
     #              {"product_id": "1164142860", "product_name": "HDMI Matrix 4x4, with UTP Extender 60m"}]
     # batch_insert(documents)
 
-    results = knn_search("pp_vector", "python",2)
-    for hit in results:
-        # print(hit['_source']['product_name'])
-        print(f"得分: {hit['_score']:.4f} 文本: {hit['_source']['product_name']}")
-        print("-" * 50)
+    # results = knn_search("pp_vector", "python",2)
+    # for hit in results:
+    #     # print(hit['_source']['product_name'])
+    #     print(f"得分: {hit['_score']:.4f} 文本: {hit['_source']['product_name']}")
+    #     print("-" * 50)
