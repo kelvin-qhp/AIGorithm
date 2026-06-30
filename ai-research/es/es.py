@@ -1,5 +1,9 @@
 from elasticsearch import Elasticsearch,helpers
 from embedding.mpnet_embedding import sentence_transformers_embedding
+
+import time
+
+
 def es_client():
     es = Elasticsearch(
         ['https://192.168.117.26:9200'],
@@ -146,9 +150,20 @@ def knn_search(indices_name, query_text, k=5, num_candidates=100):
         k: 返回结果数量
         num_candidates: 候选数量（越大越准确，但越慢）
     """
-    # 生成查询向量
+    if k >2000:
+        k=2000
 
+    if num_candidates < k:
+        num_candidates = k * 2
+
+    if num_candidates >= 2000:
+        num_candidates = 2000
+
+    # 生成查询向量
+    start = time.time()
     query_vector = sentence_transformers_embedding(query_text).tolist()
+    print(f"embedding耗时: {time.time() - start:.4f} 秒")
+    start = time.time()
     # kNN 查询
     response = es.search(
         index=indices_name,
@@ -162,19 +177,22 @@ def knn_search(indices_name, query_text, k=5, num_candidates=100):
             }
         }
     )
-
+    print(f"query耗时: {time.time() - start:.4f} 秒")
     return response['hits']['hits']
 
 if __name__ == '__main__':
     # es = es_client()
-    create_indices()
+    # create_indices()
     # insert("pp_vector", "123", "python")
     # documents = [{"product_id": "1201307509", "product_name": "Promotional Mother's Day Balloons Heart Shape Custom Color Decorative Foil Balloons"},
     #              {"product_id": "1164142860", "product_name": "HDMI Matrix 4x4, with UTP Extender 60m"}]
     # batch_insert(documents)
+    # bearing
+    start = time.time()
+    results = knn_search("pp_vector", "genuine leather shoes",800)
+    print(f"Total耗时: {time.time() - start:.4f} 秒 for size:{len(results)}")
 
-    # results = knn_search("pp_vector", "python",2)
-    # for hit in results:
-    #     # print(hit['_source']['product_name'])
-    #     print(f"得分: {hit['_score']:.4f} 文本: {hit['_source']['product_name']}")
-    #     print("-" * 50)
+    for hit in results:
+        print(f"得分: {hit['_score']:.4f} id:{hit['_id']} 文本: {hit['_source']['product_name']}")
+        print("-" * 50)
+
