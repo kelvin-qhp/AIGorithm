@@ -15,6 +15,16 @@ find . -name "ls"
 find .  -type f -name 'cer*'
 ~~~ 
 
+
+~~~
+find . -type f -name "*.tmp" -delete
+find . -type f -name "*.tmp" -exec rm {} \;
+ls -lh
+ls -lhR
+ls -lht
+
+~~~
+
 ## vim
 |按键|功能|
 |--|--|

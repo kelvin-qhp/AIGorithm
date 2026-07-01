@@ -2030,16 +2030,7 @@ PUT my-index-000001
 
 
 
-# linux command:
 
-~~~
-find . -type f -name "*.tmp" -delete
-find . -type f -name "*.tmp" -exec rm {} \;
-ls -lh
-ls -lhR
-ls -lht
-
-~~~
 
 
 
