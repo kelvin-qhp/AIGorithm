@@ -33,6 +33,9 @@ def create_indices(indices_name="pp_vector"):
                     "type": "dense_vector",
                     "dims": 768,  # 向量维度
                     "index": True,
+                    "index_options": {
+                        "type": "bbq_hnsw"
+                    },
                     "similarity": "cosine"  # 相似度计算方式
                 },
                 "org_id":{"type": "long"},

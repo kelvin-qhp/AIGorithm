@@ -1,5 +1,24 @@
 # ES
 
+### -2. Troubleshooting high CPU 
+https://www.zyxy.net/archives/38101
+~~~
+1. top -H -pid xxx
+
+十制转十六制度
+2. printf "%x\n" {pid}
+
+3. jstack {十六进制pid} dump1.txt
+-> RUNNABLE 
+-> WAITTING
+-> BLOCKED
+
+4. grep RUNNABLE dump1.txt | wc -l
+
+
+~~~
+
+
 ### -1. Misc
 ~~~
 Python Study:
@@ -101,63 +120,6 @@ auto_queue_frame_size ：
 
 ![1773133730205](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1773133730205.png)
 
-### 2. git commend
-
-2.1 Git global setup
-
-~~~
-git config --global user.name "Kelvin Qin"
-git config --global user.email "kelvinqin@globalsources.com"
-~~~
-
-2.2 Create a new repository
-
-~~~
-git clone http://gsol-gitlab.szn.globalsources.com/isearch/gsol-isearch-service-api.git
-cd gsol-isearch-service-api
-touch README.md
-git add README.md
-git commit -m "add README"
-git push -u origin master
-~~~
-
-2.3 Push an existing folder
-
-~~~
-cd existing_folder
-git init
-git remote add origin http://gsol-gitlab.szn.globalsources.com/isearch/gsol-isearch-service-api.git
-git add .
-git commit -m "Initial commit"
-git push -u origin master
-~~~
-
-2.4 Push an existing Git repository
-
-~~~
-cd existing_repo
-git remote rename origin old-origin
-git remote add origin http://gsol-gitlab.szn.globalsources.com/isearch/gsol-isearch-service-api.git
-git push -u origin --all
-git push -u origin --tags
-~~~
-
-2.5 git create/delete branch
-~~~
- // create branch & commit
- git checkout -b feature/kelvin/s139/master
- git push -u origin feature/kelvin/s139/master
- 
- // delete local/remote branch & commit
- git -D feature/kelvin/s139/master
- git push origin --delete  feature/kelvin/s139/master
- 
-~~~
-
-2.6 git merge
-~~~
- git merge --no-ff feature/kelvin/s139/master
-~~~
 
 
 ### 3. doccano install 
