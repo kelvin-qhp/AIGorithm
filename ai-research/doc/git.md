@@ -55,3 +55,19 @@ git push -u origin --tags
 ~~~
  git merge --no-ff feature/kelvin/s139/master
 ~~~
+
+
+
+
+# Conda env config
+~~~
+pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+conda create -n conda_env_13 
+conda activate conda_env_13
+conda install python=3.13.13
+# 激活环境后，在当前环境安装
+conda install numpy
+# 或者，不激活环境，直接用 -n 指定环境名安装
+conda install -n myenv numpy
+~~~

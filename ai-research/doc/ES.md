@@ -1,5 +1,34 @@
 # ES
 
+## ES knowledge
+
+### token filter
+~~~
+1. Apostrophe： 移除‘号后面的内容
+2. CJK bigram: 中/日/韩文的2元文法
+3. Classic: 除移's or .和 把-变成空格
+4. Common grams:对于common_words中定义的words执行2 grams(用_连接）
+   "common_words": ["is", "the"] -> [ the, the_quick, quick, fox, fox_is, is, is_brown, brown ]
+5. Delimited payload
+   "the|0 brown|10 fox|5 is|0 quick|10" -> [ the, brown, fox, is, quick ]
+    config: ..."plus_delimited_filter": { "type": "delimited_payload","delimiter": "+","encoding": "int"}
+6. Dictionary decompounder token filter： Donaudampfschiff -> [ Donaudampfschiff, Donau, dampf, schiff ]
+   config: ..."type": "dictionary_decompounder","word_list": ["Donau", "dampf", "meer", "schiff"]
+   --hyphenation_decompounder
+7. Keyword marker : 保护词，不会被filter加工
+8. Keyword repeat : 多一份原词的token, 和"stemmer" +"remove_duplicates"一起会用保持原词的搜索永远有效
+9. Unique token filter:去重term
+10.Trim token filter:去前后空格for "keyword" type
+11.Word delimiter graph：去掉's,split token with 空格 - + 驼峰word
+
+
+
+BTW：
+index_options：docs/freqs/positions (default)/offsets
+
+~~~
+
+
 ### -2. Troubleshooting high CPU 
 https://www.zyxy.net/archives/38101
 ~~~
@@ -19,11 +48,6 @@ https://www.zyxy.net/archives/38101
 ~~~
 
 
-### -1. Misc
-~~~
-Python Study:
-https://liaoxuefeng.com/books/python/async-io/asyncio/index.html#0
-~~~
 
 ### 0. GSOL isearch biz:
 
@@ -2020,29 +2044,19 @@ PUT my-index-000001
 		
 ~~~~
 
-~~~
-
-~~~
-
-![1776410046086](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1776410046086.png)
-
-
-
-
-
-
-
 
 
 ~~~
-pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
-conda create -n conda_env_13 
-conda activate conda_env_13
-conda install python=3.13.13
-# 激活环境后，在当前环境安装
-conda install numpy
-# 或者，不激活环境，直接用 -n 指定环境名安装
-conda install -n myenv numpy
 ~~~
+
+
+
+
+
+
+
+
+
+
 
