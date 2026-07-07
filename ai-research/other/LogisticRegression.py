@@ -28,7 +28,7 @@ plt.xlim(xx.min(), xx.max())
 plt.ylim(yy.min(), yy.max())
 plt.xlabel("theta_1")
 plt.ylabel("theta_2")
-plt.show()
+# plt.show()
 
 
 def sigmoid(z):

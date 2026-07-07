@@ -16,7 +16,7 @@ print(f"Max indices in rows: {max_idx_row}")
 
 
 
-print("*"*20,"softmax:");
+print("*"*20,"softmax:")
 
 # 假设有一些原始分数
 logits = torch.tensor([2.0, 1.0, 0.1])

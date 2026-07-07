@@ -42,7 +42,7 @@ B = torch.randn(x, y)
 print(A*B == torch.mul(A,B))
 ~~~
 
-2.2 标准矩阵乘法，行 × 列
+2.2 标准矩阵乘法 @ or torch.matmul():行 × 列
 ~~~
 A = torch.tensor([[1, 2,3],
                   [4,5, 6]])
@@ -84,4 +84,16 @@ c2 = torch.bmm(a, b.unsqueeze(0).expand(2,-1,-1))
 print(c1.shape == c2.shape)
     
 ~~~
+Notes:
+~~~
+np.dot()等同于torch:
+---------------------------------------
+torch.dot()             # 1 dim
+torch.matmul(A)         # n dim
+@                       # n dim
+---------------------------------------
 
+矩阵乘向量: np.dot(A, v) => (m,)
+A = (m, n)
+v = (n,)
+~~~
