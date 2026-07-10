@@ -1,8 +1,28 @@
 # ES
 
-## ES knowledge
+## 1。 ES base knowledge
 
-### token filter
+### 1.1 analyzer
+~~~
+1. simple:  
+            dog's           => dog, s
+            Brown-Foxes     => brown, foxes
+            2 .             => [delete]
+2. standard:
+            dog's           => dog's
+            Brown-Foxes     => brown, foxes
+            2               => 2
+            .               => [delete]
+3. Fingerprint:
+    - lowercased
+    - remove extended characters
+    - sorted
+    - deduplicated 
+    
+   "Yes yes, Gödel said this sentence is consistent and." => [ and consistent godel is said sentence this yes ]
+~~~
+
+### 1.2 token filter
 ~~~
 1. Apostrophe： 移除‘号后面的内容
 2. CJK bigram: 中/日/韩文的2元文法
@@ -21,15 +41,65 @@
 10.Trim token filter:去前后空格for "keyword" type
 11.Word delimiter graph：去掉's,split token with 空格 - + 驼峰word
 
-
-
 BTW：
 index_options：docs/freqs/positions (default)/offsets
 
 ~~~
 
+### 1.3 Aggregation
 
-### -2. Troubleshooting high CPU 
+1.3.1 Adjacency matrix aggregation: 额外聚合出二二交集的agg filter
+~~~
+...
+ "aggs" : {
+    "interactions" : {
+      "adjacency_matrix" : {
+        "filters" : {
+          "grpA" : { "terms" : { "accounts" : ["hillary", "sidney"] }},
+          "grpB" : { "terms" : { "accounts" : ["donald", "mitt"] }},
+          "grpC" : { "terms" : { "accounts" : ["vladimir", "nigel"] }}
+        }
+      }
+    }
+  }
+ ... 
+ 
+ {
+  "took": 9,
+  "timed_out": false,
+  "_shards": ...,
+  "hits": ...,
+  "aggregations": {
+    "interactions": {
+      "buckets": [
+        {
+          "key":"grpA",
+          "doc_count": 2
+        },
+        {
+          "key":"grpA&grpB",
+          "doc_count": 1
+        },
+        {
+          "key":"grpB",
+          "doc_count": 2
+        },
+        {
+          "key":"grpB&grpC",
+          "doc_count": 1
+        },
+        {
+          "key":"grpC",
+          "doc_count": 1
+        }
+      ]
+    }
+  }
+} 
+~~~
+
+
+## 2. Troubleshooting high CPU 
 https://www.zyxy.net/archives/38101
 ~~~
 1. top -H -pid xxx

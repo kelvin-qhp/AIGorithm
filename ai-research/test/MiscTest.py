@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 if __name__ == '__main__':
     # A = torch.tensor([[1, 2,3],
     #                   [4,5, 6]])
@@ -25,8 +25,16 @@ if __name__ == '__main__':
     batch = 2
     # a = torch.tensor([2, 2, 5])
     # b = torch.tensor([2, 5, 6])
-    a = torch.randn(2, 3, 4)
-    b = torch.randn( 4, 5)
-    c1 = torch.matmul(a, b)
-    c2 = torch.bmm(a, b.unsqueeze(0).expand(batch,-1,-1))
-    print(c1.shape == c2.shape)
+    # a = torch.randn(2, 3, 4)
+    # b = torch.randn( 4, 5)
+    # c1 = torch.matmul(a, b)
+    # c2 = torch.bmm(a, b.unsqueeze(0).expand(batch,-1,-1))
+    # print(c1.shape == c2.shape)
+
+    # print(np.random.binomial(1,0.4,10))
+    print(np.random.randint(50,500))
+    hidden_units = [256, 128, 64]
+    print(f'{hidden_units[:-1]} --------: {hidden_units[1:]}')
+    list = [str(layer[0]) +'-' +str(layer[1]) for layer in list(zip(hidden_units[:-1], hidden_units[1:]))]
+    print(list)
+
