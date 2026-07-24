@@ -1,7 +1,11 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-
+import util.utils as util
+from util.ExcelExporter import ExcelExporter
+import pandas as pd
+from torch.utils.data import random_split
+from datasets import load_dataset,ClassLabel,Dataset
 
 class Linear(nn.Module):
     """
@@ -132,4 +136,28 @@ if __name__ == '__main__':
 
     net = WideDeep(feature_info, hidden_units)
     print(net)
+    print("*"*50)
     print(net(x))
+
+    # dense_features = ['I' + str(i) for i in range(1, 13)]
+    # sparse_features = ['C' + str(i) for i in range(1, 27)]
+    # headers = dense_features + sparse_features
+    #
+    # # file_path = '../data/dataset/Criteo/test.txt'
+    # # data_list = util.load_data(file_path,max_row_no=100)
+    # # ExcelExporter().export_with_formatting(data=data_list,headers=headers,filename='../data/export/criteo.xlsx')
+    #
+    # file_path = '../data/export/criteo_sampled_data.csv'
+    # df = pd.read_csv(file_path)
+    # print(df.shape)
+    # # print(df.info())
+    # # print(df.columns)
+    #
+    # my_dataset = load_dataset("csv", data_files=file_path, split="train")
+    # my_dataset = my_dataset.cast_column("label", ClassLabel(names=["negative", "positive"]))
+    # sub_dataset = my_dataset.select(range(10000))
+    # split_dataset = sub_dataset.train_test_split(test_size=0.4,shuffle=True,stratify_by_column='label',seed=41)
+    # print(split_dataset)
+
+
+    # Dataset.from_csv()
