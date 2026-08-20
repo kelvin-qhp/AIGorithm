@@ -1,6 +1,7 @@
 # ES
 
-## 0。 BM25
+## 0。 Elasticsearch
+### 0.1 BM25
 ![img.png](img.png)
 
 ![img_1.png](img_1.png)
@@ -29,6 +30,9 @@ k1-词的饱和度值（默认值为1.2）：控制着以下问题的答案：�
     k1 越高意味着每个项的分数可以继续上升。
     k1 的值为 0 意味着除 IDF(qi) 之外的所有内容都会抵消
 ~~~
+
+### 0.2 match diff:
+![img_2.png](img_2.png)
 
 ## 1。 ES base knowledge
 
