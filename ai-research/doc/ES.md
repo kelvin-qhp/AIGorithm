@@ -5,6 +5,23 @@
 
 ![img_1.png](img_1.png)
 ~~~
+PUT people4
+{
+  "settings": {
+    "number_of_shards": 1,
+    "index" : {
+        "similarity" : {
+          "default" : {
+            "type" : "BM25",
+            "b": 0.75,
+            "k1": 1.2
+          }
+        }
+    }
+  }
+}
+~~~
+~~~
 b-归一化参数（默认值为0.75）： 
     b 越大，文档长度与平均长度之比的影响就越大。
     如果将 b 设为 0，那么长度比的影响将完全无效（表示禁用归一化）
