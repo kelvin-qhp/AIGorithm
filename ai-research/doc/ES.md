@@ -34,6 +34,56 @@ k1-词的饱和度值（默认值为1.2）：控制着以下问题的答案：�
 ### 0.2 match diff:
 ![img_2.png](img_2.png)
 
+~~~
+- 字段为中心（Field-centric）： multi_match  + type=cross_fields
+- 项为中心（Term-centric）： combined_fields 
+~~~
+
+### 0.3 ES Vector memory评估：
+~~~
+内存需求 ≈ (向量维度 × 4字节 + neighbors × 4字节) × 向量总数 × (1 + 副本数)
+
+示例：假设有1亿个768维向量，neighbors默认为64，1个副本：
+单个向量内存 ≈ (768 * 4 + 64 * 4)字节 ≈ 3.3KB
+总内存需求 ≈ 3.3KB * 100,000,000 * 2 ≈ 660GB
+~~~
++ m 每增加1，每个向量就要多吃 4 字节内存
+
+~~~
+PUT /my_vector_index
+{
+  "mappings": {
+    "properties": {
+      "my_vector": {
+        "type": "dense_vector",
+        "dims": 768,
+        "similarity": "cosine",
+        "index_options": {
+          "type": "hnsw",
+          "m": 16,
+          "ef_construction": 100
+        }
+      }
+    }
+  }
+}
+
+POST /my_vector_index/_search
+{
+  "size": 10,
+  "knn": {
+    "field": "my_vector",
+    "query_vector": [0.1, 0.2, 0.3, ...],  // 你的查询向量，长度需与映射的 dims 一致
+    "k": 10,
+    "num_candidates": 100,   // ⚠️ 注意：在 Elasticsearch 中，ef_search 通过 num_candidates 来设置
+    "similarity": "cosine"
+  },
+  "_source": ["title", "content"]  // 只返回需要的字段，减少网络开销
+}
+
+~~~
+
+
 ## 1。 ES base knowledge
 
 ### 1.1 analyzer
@@ -248,43 +298,6 @@ auto_queue_frame_size ：
 
 ![1773133730205](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1773133730205.png)
 
-
-
-### 3. doccano install 
-
-pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-
-~~~
-environs
-furl
-whitenoise
-django-filter
-polymorphic
-django-polymorphic
-django-cors-headers
-django-allauth
-dj_rest_auth
-django_celery_results
-django_drf_filepond
-psycopg2
-auto_labeling_pipeline
-djangorestframework
-url
-filetype
-chardet
-pyexcel
-seqval
-pandas
-django-rest-polymorphic
-model_mommy
-djangorestframework-xml
-
-MIDDLEWARE:
-allauth.account.middleware.AccountMiddleware
-
-
-
-~~~
 
 
 
@@ -691,95 +704,9 @@ indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5982538574 -    
 indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789023879 Zx2pLsOIRgOd08IBVlZS4g:5982538574 transport  1755478588161 00:56:28  2.1h         10.38.49.21  es-data1
 indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5898030756 -                                 transport  1755478591023 00:56:31  2.1h         10.38.56.198 es-master
 indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789027992 E_IDzeBLSBC0Ils0aJEFsA:5898030756 transport  1755478591077 00:56:31  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789027991 E_IDzeBLSBC0Ils0aJEFsA:5898030756 transport  1755478591077 00:56:31  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5982548470 -                                 transport  1755478593846 00:56:33  2.1h         10.38.79.31  es-data2
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789031400 Zx2pLsOIRgOd08IBVlZS4g:5982548470 transport  1755478593858 00:56:33  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789031401 Zx2pLsOIRgOd08IBVlZS4g:5982548470 transport  1755478593858 00:56:33  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5789034478 -                                 transport  1755478596138 00:56:36  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789034497 hPDJUkPUQNOLDRvLkMuDZQ:5789034478 direct     1755478596150 00:56:36  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5982557997 -                                 transport  1755478599024 00:56:39  2.1h         10.38.79.31  es-data2
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789037913 Zx2pLsOIRgOd08IBVlZS4g:5982557997 transport  1755478599034 00:56:39  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5789041103 -                                 transport  1755478601855 00:56:41  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789041108 hPDJUkPUQNOLDRvLkMuDZQ:5789041103 direct     1755478601873 00:56:41  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789041109 hPDJUkPUQNOLDRvLkMuDZQ:5789041103 direct     1755478601873 00:56:41  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5789046289 -                                 transport  1755478605993 00:56:45  2.1h         10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789046403 hPDJUkPUQNOLDRvLkMuDZQ:5789046289 direct     1755478606047 00:56:46  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5982567254 -                                 transport  1755478606908 00:56:46  2.1h         10.38.79.31  es-data2
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789047691 Zx2pLsOIRgOd08IBVlZS4g:5982567254 transport  1755478606935 00:56:46  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5982580000 -                                 transport  1755478616684 00:56:56  2.1h         10.38.79.31  es-data2
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789058574 Zx2pLsOIRgOd08IBVlZS4g:5982580000 transport  1755478616779 00:56:56  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5898069186 -                                 transport  1755478617098 00:56:57  2.1h         10.38.56.198 es-master
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5789058800 E_IDzeBLSBC0Ils0aJEFsA:5898069186 transport  1755478617341 00:56:57  2.1h         10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660467 -                                 transport  1755486405031 03:06:45  352.9ms      10.38.49.21  es-data1
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660468 hPDJUkPUQNOLDRvLkMuDZQ:5795660467 direct     1755486405031 03:06:45  352.7ms      10.38.49.21  es-data1
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660469 hPDJUkPUQNOLDRvLkMuDZQ:5795660467 direct     1755486405031 03:06:45  352.6ms      10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5989685651 -                                 transport  1755486405043 03:06:45  341.2ms      10.38.79.31  es-data2
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281558 Zx2pLsOIRgOd08IBVlZS4g:5989685651 transport  1755486405044 03:06:45  340.1ms      10.38.56.198 es-master
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281559 Zx2pLsOIRgOd08IBVlZS4g:5989685651 transport  1755486405044 03:06:45  340ms        10.38.56.198 es-master
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5989685675 -                                 transport  1755486405225 03:06:45  159ms        10.38.79.31  es-data2
-indices:data/read/search[phase/fetch/id] E_IDzeBLSBC0Ils0aJEFsA:5905281842 Zx2pLsOIRgOd08IBVlZS4g:5989685675 transport  1755486405309 03:06:45  74.9ms       10.38.56.198 es-master
-indices:data/read/search[phase/fetch/id] E_IDzeBLSBC0Ils0aJEFsA:5905281843 Zx2pLsOIRgOd08IBVlZS4g:5989685675 transport  1755486405309 03:06:45  74.8ms       10.38.56.198 es-master
-indices:data/read/search[phase/fetch/id] Zx2pLsOIRgOd08IBVlZS4g:5989685749 Zx2pLsOIRgOd08IBVlZS4g:5989685675 direct     1755486405309 03:06:45  75.4ms       10.38.79.31  es-data2
-indices:admin/refresh                    hPDJUkPUQNOLDRvLkMuDZQ:5795660518 -                                 transport  1755486405235 03:06:45  149.2ms      10.38.49.21  es-data1
-indices:admin/refresh[s]                 hPDJUkPUQNOLDRvLkMuDZQ:5795660519 hPDJUkPUQNOLDRvLkMuDZQ:5795660518 transport  1755486405235 03:06:45  149.1ms      10.38.49.21  es-data1
-indices:admin/refresh[s]                 Zx2pLsOIRgOd08IBVlZS4g:5989685688 hPDJUkPUQNOLDRvLkMuDZQ:5795660519 transport  1755486405235 03:06:45  148.9ms      10.38.79.31  es-data2
-indices:admin/refresh[s][p]              Zx2pLsOIRgOd08IBVlZS4g:5989685689 Zx2pLsOIRgOd08IBVlZS4g:5989685688 direct     1755486405235 03:06:45  148.8ms      10.38.79.31  es-data2
-indices:admin/refresh[s][r]              E_IDzeBLSBC0Ils0aJEFsA:5905281852 Zx2pLsOIRgOd08IBVlZS4g:5989685688 transport  1755486405324 03:06:45  59.9ms       10.38.56.198 es-master
-cluster:monitor/nodes/stats              hPDJUkPUQNOLDRvLkMuDZQ:5795660552 -                                 transport  1755486405281 03:06:45  103.3ms      10.38.49.21  es-data1
-cluster:monitor/nodes/stats[n]           hPDJUkPUQNOLDRvLkMuDZQ:5795660553 hPDJUkPUQNOLDRvLkMuDZQ:5795660552 direct     1755486405281 03:06:45  103.3ms      10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5989685721 -                                 transport  1755486405297 03:06:45  87.4ms       10.38.79.31  es-data2
-indices:data/read/search[phase/query]    Zx2pLsOIRgOd08IBVlZS4g:5989685722 Zx2pLsOIRgOd08IBVlZS4g:5989685721 direct     1755486405297 03:06:45  87.2ms       10.38.79.31  es-data2
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281780 Zx2pLsOIRgOd08IBVlZS4g:5989685721 transport  1755486405299 03:06:45  85.2ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281785 Zx2pLsOIRgOd08IBVlZS4g:5989685721 transport  1755486405299 03:06:45  84.8ms       10.38.56.198 es-master
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281816 -                                 transport  1755486405303 03:06:45  80.5ms       10.38.56.198 es-master
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660582 -                                 transport  1755486405309 03:06:45  74.6ms       10.38.49.21  es-data1
-indices:data/read/search[phase/fetch/id] hPDJUkPUQNOLDRvLkMuDZQ:5795660626 hPDJUkPUQNOLDRvLkMuDZQ:5795660582 direct     1755486405384 03:06:45  61.7micros   10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281853 -                                 transport  1755486405326 03:06:45  57.6ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660592 E_IDzeBLSBC0Ils0aJEFsA:5905281853 transport  1755486405327 03:06:45  57.4ms       10.38.49.21  es-data1
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660593 E_IDzeBLSBC0Ils0aJEFsA:5905281853 transport  1755486405327 03:06:45  57.4ms       10.38.49.21  es-data1
-indices:data/read/search[phase/query]    Zx2pLsOIRgOd08IBVlZS4g:5989685755 E_IDzeBLSBC0Ils0aJEFsA:5905281853 transport  1755486405327 03:06:45  57.3ms       10.38.79.31  es-data2
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281869 -                                 transport  1755486405343 03:06:45  40.6ms       10.38.56.198 es-master
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660597 -                                 transport  1755486405343 03:06:45  40.7ms       10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660594 -                                 transport  1755486405343 03:06:45  40.9ms       10.38.49.21  es-data1
-indices:admin/refresh                    hPDJUkPUQNOLDRvLkMuDZQ:5795660605 -                                 transport  1755486405344 03:06:45  40.2ms       10.38.49.21  es-data1
-indices:admin/refresh[s]                 hPDJUkPUQNOLDRvLkMuDZQ:5795660606 hPDJUkPUQNOLDRvLkMuDZQ:5795660605 transport  1755486405344 03:06:45  40.1ms       10.38.49.21  es-data1
-indices:admin/refresh[s]                 Zx2pLsOIRgOd08IBVlZS4g:5989685780 hPDJUkPUQNOLDRvLkMuDZQ:5795660606 transport  1755486405344 03:06:45  39.8ms       10.38.79.31  es-data2
-indices:admin/refresh[s][p]              Zx2pLsOIRgOd08IBVlZS4g:5989685781 Zx2pLsOIRgOd08IBVlZS4g:5989685780 direct     1755486405344 03:06:45  39.6ms       10.38.79.31  es-data2
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660602 -                                 transport  1755486405344 03:06:45  40.4ms       10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660609 -                                 transport  1755486405346 03:06:45  38.4ms       10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660614 -                                 transport  1755486405350 03:06:45  33.6ms       10.38.49.21  es-data1
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660616 hPDJUkPUQNOLDRvLkMuDZQ:5795660614 direct     1755486405351 03:06:45  33.4ms       10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281881 -                                 transport  1755486405356 03:06:45  27.7ms       10.38.56.198 es-master
-indices:data/read/msearch                E_IDzeBLSBC0Ils0aJEFsA:5905281895 E_IDzeBLSBC0Ils0aJEFsA:5905281881 direct     1755486405365 03:06:45  18.9ms       10.38.56.198 es-master
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281902 E_IDzeBLSBC0Ils0aJEFsA:5905281895 transport  1755486405365 03:06:45  18.4ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660622 E_IDzeBLSBC0Ils0aJEFsA:5905281902 transport  1755486405366 03:06:45  18.2ms       10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281896 E_IDzeBLSBC0Ils0aJEFsA:5905281895 transport  1755486405365 03:06:45  18.9ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660621 E_IDzeBLSBC0Ils0aJEFsA:5905281896 transport  1755486405365 03:06:45  18.6ms       10.38.49.21  es-data1
-indices:data/read/search                 hPDJUkPUQNOLDRvLkMuDZQ:5795660617 -                                 transport  1755486405356 03:06:45  28.4ms       10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281885 -                                 transport  1755486405357 03:06:45  26.6ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660620 E_IDzeBLSBC0Ils0aJEFsA:5905281885 transport  1755486405358 03:06:45  26.4ms       10.38.49.21  es-data1
-indices:data/read/search                 E_IDzeBLSBC0Ils0aJEFsA:5905281892 -                                 transport  1755486405364 03:06:45  19.4ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    Zx2pLsOIRgOd08IBVlZS4g:5989685793 E_IDzeBLSBC0Ils0aJEFsA:5905281892 transport  1755486405365 03:06:45  18.9ms       10.38.79.31  es-data2
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281893 E_IDzeBLSBC0Ils0aJEFsA:5905281892 direct     1755486405365 03:06:45  19.1ms       10.38.56.198 es-master
-indices:data/read/search[phase/query]    E_IDzeBLSBC0Ils0aJEFsA:5905281894 E_IDzeBLSBC0Ils0aJEFsA:5905281892 direct     1755486405365 03:06:45  18.9ms       10.38.56.198 es-master
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5989685796 -                                 transport  1755486405377 03:06:45  7ms          10.38.79.31  es-data2
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660623 Zx2pLsOIRgOd08IBVlZS4g:5989685796 transport  1755486405377 03:06:45  6.4ms        10.38.49.21  es-data1
-indices:data/read/search                 Zx2pLsOIRgOd08IBVlZS4g:5989685799 -                                 transport  1755486405383 03:06:45  806.6micros  10.38.79.31  es-data2
-indices:data/read/search[phase/query]    Zx2pLsOIRgOd08IBVlZS4g:5989685800 Zx2pLsOIRgOd08IBVlZS4g:5989685799 direct     1755486405383 03:06:45  653.8micros  10.38.79.31  es-data2
-indices:data/read/search[phase/query]    Zx2pLsOIRgOd08IBVlZS4g:5989685801 Zx2pLsOIRgOd08IBVlZS4g:5989685799 direct     1755486405384 03:06:45  580.2micros  10.38.79.31  es-data2
-indices:data/read/search[phase/query]    hPDJUkPUQNOLDRvLkMuDZQ:5795660624 Zx2pLsOIRgOd08IBVlZS4g:5989685799 transport  1755486405384 03:06:45  191.2micros  10.38.49.21  es-data1
-cluster:monitor/tasks/lists              E_IDzeBLSBC0Ils0aJEFsA:5905281908 -                                 transport  1755486405384 03:06:45  203.3micros  10.38.56.198 es-master
-cluster:monitor/tasks/lists[n]           hPDJUkPUQNOLDRvLkMuDZQ:5795660625 E_IDzeBLSBC0Ils0aJEFsA:5905281908 transport  1755486405384 03:06:45  80.6micros   10.38.49.21  es-data1
-cluster:monitor/tasks/lists[n]           Zx2pLsOIRgOd08IBVlZS4g:5989685802 E_IDzeBLSBC0Ils0aJEFsA:5905281908 transport  1755486405384 03:06:45  93.5micros   10.38.79.31  es-data2
 cluster:monitor/tasks/lists[n]           E_IDzeBLSBC0Ils0aJEFsA:5905281909 E_IDzeBLSBC0Ils0aJEFsA:5905281908 direct     1755486405384 03:06:45  84.6micros   10.38.56.198 es-master
 
 ~~~
-
-![1755486520243](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1755486520243.png)
-
-
-
-![1755490368275](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1755490368275.png)
 
 
 
@@ -864,7 +791,7 @@ GET /test_index/_analyze
 
 ~~~
 
-![1756706584436](C:\Users\user\AppData\Roaming\Typora\typora-user-images\1756706584436.png)
+
 
 NOTES： <font color=Red>"expand":false</font > ，only show as below:
 
@@ -998,16 +925,7 @@ GET /_cluster/allocation/explain
       "productOutline",
       "productGroups",
       "productImageUrl",
-      "factories",
-      "productGroups",
-      "productKeyword1",
-      "productKeyword2",
-      "productKeyword3",
-      "supplierState",
-      "productInfoCopy",
-      "categoryNameTreeCopy",
-      "productKeyword",
-      "productAttribute"
+      "factories"
     ]
   },
   "track_total_hits": 2147483647
@@ -1074,17 +992,7 @@ GET /_cluster/allocation/explain
       "productDescription",
       "productOutline",
       "productGroups",
-      "productImageUrl",
-      "factories",
-      "productGroups",
-      "productKeyword1",
-      "productKeyword2",
-      "productKeyword3",
-      "supplierState",
-      "productInfoCopy",
-      "categoryNameTreeCopy",
-      "productKeyword",
-      "productAttribute"
+      "productImageUrl"
     ]
   },
   "track_total_hits": 2147483647
