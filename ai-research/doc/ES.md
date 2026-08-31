@@ -2056,10 +2056,45 @@ PUT my-index-000001
 		
 ~~~~
 
-
+## 6。 opensearch DSL
 
 ~~~
-
+GET /nginx-access-*/_search
+{
+  "size": 0,
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "@timestamp": {
+              "gte": "2026-08-23T00:00:00.000+08:00",
+              "lte": "2026-08-30T23:59:59.999+08:00"
+            }
+          }
+        },
+        {
+          "wildcard": {
+            "request.keyword": {
+              "value": "/api/isearch-bff/*"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "logs_per_day": {
+      "date_histogram": {
+        "field": "@timestamp",
+        "format": "yyyy-MM-dd",
+        "time_zone": "+08:00",
+        "calendar_interval": "day",
+        "min_doc_count": 0
+      }
+    }
+  }
+}
 ~~~
 
 
