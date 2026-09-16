@@ -198,10 +198,23 @@ https://www.zyxy.net/archives/38101
 
 4. grep RUNNABLE dump1.txt | wc -l
 
-
 ~~~
 
+查找慢查询
+GET /_tasks?detailed=true&actions=*search*&human=true
 
+大查询在运行
+GET /_cat/thread_pool?v&h=id,name,queue,rejected,completed&s=rejected:desc
+
+check reject count
+GET _cat/thread_pool/search?v
+
+查看堆内/外内存
+GET _cat/nodes?v&h=name,heap.current,heap.max,ram.current,ram.max
+
+GET _tasks?actions=*search*&detailed=true
+GET _cat/nodes?v&h=name,cpu,load_1m,load_5m,heap.percent,ram.percent
+GET _nodes?filter_path=nodes.*.process.mlockall
 
 ### 0. GSOL isearch biz:
 
@@ -2095,6 +2108,15 @@ GET /nginx-access-*/_search
     }
   }
 }
+~~~
+
+### prometheous metric for feign api:
+https://prometheus.globalsources.com/
+~~~
+topk(100,sum(SREHystrixEvent_total{event ="success", group=~"isearch-bff|gsol-agg-search"}) by (app,group,uri))
+
+topk(100,sum(rate(SREHystrixEvent_total{event ="success", group=~"isearch-bff|gsol-agg-search"}[2m])) by (app,group,uri))
+topk(100,sum(increase(SREHystrixEvent_total{event ="success", group=~"isearch-bff|gsol-agg-search"}[2m])) by (app,group,uri))
 ~~~
 
 
